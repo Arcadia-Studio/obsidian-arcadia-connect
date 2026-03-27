@@ -1,0 +1,10 @@
+{
+	"id": "arcadia-connect",
+	"name": "Arcadia Connect",
+	"version": "1.0.0",
+	"minAppVersion": "0.16.0",
+	"description": "Personal CRM with @-mention people linking, interaction logging, and a People sidebar. Part of the Arcadia Suite.",
+	"author": "Peter J. Carter",
+	"authorUrl": "https://theologyinfocus.org",
+	"isDesktopOnly": false
+}
