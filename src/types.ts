@@ -1,4 +1,5 @@
 import { TFile } from 'obsidian';
+import type { LicenseStatus } from './license';
 
 export interface ArcadiaConnectSettings {
 	peopleFolder: string;
@@ -6,6 +7,7 @@ export interface ArcadiaConnectSettings {
 	showHoverCard: boolean;
 	autoCreatePerson: boolean;
 	licenseKey: string;
+	licenseStatus: LicenseStatus | null;
 	isPro: boolean;
 }
 
@@ -15,6 +17,7 @@ export const DEFAULT_SETTINGS: ArcadiaConnectSettings = {
 	showHoverCard: true,
 	autoCreatePerson: true,
 	licenseKey: '',
+	licenseStatus: null,
 	isPro: false,
 };
 
