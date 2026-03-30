@@ -7,12 +7,15 @@ import { MentionPostProcessor } from './mention-postprocessor';
 import { ProfileCard } from './profile-card';
 import { PeopleView } from './people-view';
 import { createMentionExtension } from './mention-extension';
+import { InteractionLoggerModal } from './interaction-logger';
+import { FollowUpEngine } from './followup-engine';
 
 export default class ArcadiaConnectPlugin extends Plugin {
 	settings: ArcadiaConnectSettings = DEFAULT_SETTINGS;
 	personManager!: PersonManager;
 	mentionScanner!: MentionScanner;
 	profileCard!: ProfileCard;
+	followUpEngine!: FollowUpEngine;
 	private mentionPostProcessor!: MentionPostProcessor;
 
 	async onload(): Promise<void> {
@@ -22,6 +25,7 @@ export default class ArcadiaConnectPlugin extends Plugin {
 		this.personManager = new PersonManager(this.app, this.settings.peopleFolder);
 		this.mentionScanner = new MentionScanner(this.app, this.settings.peopleFolder);
 		this.profileCard = new ProfileCard(this.app);
+		this.followUpEngine = new FollowUpEngine(this.personManager);
 		this.mentionPostProcessor = new MentionPostProcessor(
 			this.app,
 			this.personManager,
@@ -83,10 +87,22 @@ export default class ArcadiaConnectPlugin extends Plugin {
 			},
 		});
 
+		// Add CRM commands
+		this.addCommand({
+			id: 'log-interaction',
+			name: 'Log Interaction',
+			callback: () => {
+				new InteractionLoggerModal(this.app, this.personManager, null, () => {
+					this.refreshPeopleView();
+				}).open();
+			},
+		});
+
 		// Initialize after layout is ready
 		this.app.workspace.onLayoutReady(async () => {
 			await this.personManager.initialize();
 			await this.mentionScanner.buildIndex();
+			this.followUpEngine.start();
 		});
 
 		// Watch for file changes to keep index updated
@@ -139,6 +155,7 @@ export default class ArcadiaConnectPlugin extends Plugin {
 	}
 
 	async onunload(): Promise<void> {
+		this.followUpEngine.stop();
 		this.profileCard.destroy();
 	}
 

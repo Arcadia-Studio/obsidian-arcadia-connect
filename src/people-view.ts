@@ -1,10 +1,11 @@
 import { ItemView, WorkspaceLeaf } from 'obsidian';
-import { VIEW_TYPE_PEOPLE, PersonNote } from './types';
+import { VIEW_TYPE_PEOPLE, PersonNote, DEAL_STAGE_LABELS } from './types';
 import { PersonManager } from './person-manager';
 import { MentionScanner } from './mention-scanner';
 import { ProfileCard } from './profile-card';
+import { InteractionLoggerModal, SetFollowUpModal } from './interaction-logger';
 
-type SortMode = 'alpha' | 'recent' | 'relationship';
+type SortMode = 'alpha' | 'recent' | 'relationship' | 'last-contact' | 'next-follow-up' | 'deal-stage';
 
 export class PeopleView extends ItemView {
 	private personManager: PersonManager;
@@ -12,6 +13,7 @@ export class PeopleView extends ItemView {
 	private profileCard: ProfileCard;
 	private searchQuery = '';
 	private sortMode: SortMode = 'alpha';
+	private filterOverdue = false;
 	private listEl: HTMLElement | null = null;
 
 	constructor(
@@ -62,9 +64,12 @@ export class PeopleView extends ItemView {
 
 		// Sort dropdown
 		const sortSelect = controls.createEl('select', { cls: 'arcadia-connect-sort-select' });
-		const sortOptions = [
+		const sortOptions: { value: SortMode; label: string }[] = [
 			{ value: 'alpha', label: 'A-Z' },
-			{ value: 'recent', label: 'Recent' },
+			{ value: 'recent', label: 'Recent mention' },
+			{ value: 'last-contact', label: 'Last contacted' },
+			{ value: 'next-follow-up', label: 'Follow-up due' },
+			{ value: 'deal-stage', label: 'Deal stage' },
 			{ value: 'relationship', label: 'Relationship' },
 		];
 		for (const opt of sortOptions) {
@@ -73,16 +78,41 @@ export class PeopleView extends ItemView {
 		sortSelect.value = this.sortMode;
 		sortSelect.addEventListener('change', () => {
 			this.sortMode = sortSelect.value as SortMode;
+			this.filterOverdue = false;
+			this.renderList();
+		});
+
+		// Overdue filter button
+		const overdueBtn = controls.createEl('button', {
+			cls: 'arcadia-connect-overdue-btn',
+			text: '⏰',
+			attr: { title: 'Show overdue follow-ups' },
+		});
+		overdueBtn.addEventListener('click', () => {
+			this.filterOverdue = !this.filterOverdue;
+			overdueBtn.toggleClass('is-active', this.filterOverdue);
 			this.renderList();
 		});
 
 		// New Person button
 		const newBtn = controls.createEl('button', {
 			cls: 'arcadia-connect-new-btn',
-			text: '+ New Person',
+			text: '+ Person',
 		});
 		newBtn.addEventListener('click', () => {
 			this.createNewPerson();
+		});
+
+		// Log interaction button
+		const logBtn = controls.createEl('button', {
+			cls: 'arcadia-connect-log-btn',
+			text: '+ Log',
+			attr: { title: 'Log an interaction' },
+		});
+		logBtn.addEventListener('click', () => {
+			new InteractionLoggerModal(this.app, this.personManager, null, () => {
+				this.renderList();
+			}).open();
 		});
 
 		// People list
@@ -98,33 +128,74 @@ export class PeopleView extends ItemView {
 			? this.personManager.searchPeople(this.searchQuery)
 			: this.personManager.getAllPeople();
 
+		// Apply overdue filter
+		if (this.filterOverdue) {
+			const today = new Date().toISOString().split('T')[0];
+			people = people.filter(p => {
+				if (!p.nextFollowUp) return false;
+				if (p.followUpStatus === 'done') return false;
+				return p.nextFollowUp <= today;
+			});
+		}
+
 		people = this.sortPeople(people);
 
 		if (people.length === 0) {
 			const empty = this.listEl.createDiv({ cls: 'arcadia-connect-empty' });
-			empty.textContent = this.searchQuery
-				? 'No people match your search.'
-				: 'No people notes found. Create one to get started.';
+			if (this.filterOverdue) {
+				empty.textContent = 'No overdue follow-ups.';
+			} else if (this.searchQuery) {
+				empty.textContent = 'No people match your search.';
+			} else {
+				empty.textContent = 'No people notes found. Create one to get started.';
+			}
 			return;
 		}
+
+		const today = new Date().toISOString().split('T')[0];
 
 		for (const person of people) {
 			const item = this.listEl.createDiv({ cls: 'arcadia-connect-person-item' });
 
+			const followUpOverdue = person.nextFollowUp &&
+				person.followUpStatus !== 'done' &&
+				person.nextFollowUp < today;
+			const followUpDueToday = person.nextFollowUp &&
+				person.followUpStatus !== 'done' &&
+				person.nextFollowUp === today;
+
+			if (followUpOverdue) item.addClass('has-overdue-followup');
+			if (followUpDueToday) item.addClass('has-followup-today');
+
 			const icon = item.createSpan({ cls: 'arcadia-connect-person-icon' });
-			icon.textContent = '\u{1F464}';
+			icon.textContent = followUpOverdue ? '⏰' : followUpDueToday ? '🔔' : '👤';
 
 			const info = item.createDiv({ cls: 'arcadia-connect-person-info' });
 			info.createDiv({ cls: 'arcadia-connect-person-name', text: person.name });
 
 			const meta: string[] = [];
 			if (person.organization) meta.push(person.organization);
-			if (person.relationshipType) meta.push(person.relationshipType);
+			if (person.dealStage) meta.push(DEAL_STAGE_LABELS[person.dealStage] ?? person.dealStage);
 			if (meta.length > 0) {
 				info.createDiv({
 					cls: 'arcadia-connect-person-meta',
-					text: meta.join(' \u00B7 '),
+					text: meta.join(' · '),
 				});
+			}
+
+			if (person.lastContact || person.nextFollowUp) {
+				const dateLine = info.createDiv({ cls: 'arcadia-connect-person-dates' });
+				if (person.lastContact) {
+					dateLine.createSpan({ cls: 'arcadia-date-last', text: `Last: ${person.lastContact}` });
+				}
+				if (person.nextFollowUp && person.followUpStatus !== 'done') {
+					const cls = followUpOverdue
+						? 'arcadia-date-followup overdue'
+						: followUpDueToday
+						? 'arcadia-date-followup due-today'
+						: 'arcadia-date-followup';
+					dateLine.createSpan({ cls, text: ` · Due: ${person.nextFollowUp}` });
+				}
 			}
 
 			const mentionCount = this.mentionScanner.getMentionCount(person.name);
@@ -134,12 +205,37 @@ export class PeopleView extends ItemView {
 				badge.setAttribute('title', `${mentionCount} mention${mentionCount === 1 ? '' : 's'}`);
 			}
 
-			// Click to open
+			// Action buttons (shown on hover via CSS)
+			const actions = item.createDiv({ cls: 'arcadia-connect-item-actions' });
+
+			const logBtn = actions.createEl('button', {
+				cls: 'arcadia-connect-action-btn',
+				text: '+ Log',
+				attr: { title: 'Log interaction' },
+			});
+			logBtn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				new InteractionLoggerModal(this.app, this.personManager, person, () => {
+					this.renderList();
+				}).open();
+			});
+
+			const followUpBtn = actions.createEl('button', {
+				cls: 'arcadia-connect-action-btn',
+				text: '📅',
+				attr: { title: 'Set follow-up' },
+			});
+			followUpBtn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				new SetFollowUpModal(this.app, person, this.personManager, () => {
+					this.renderList();
+				}).open();
+			});
+
 			item.addEventListener('click', () => {
 				this.app.workspace.openLinkText(person.file.path, '', false);
 			});
 
-			// Hover for profile card
 			item.addEventListener('mouseenter', () => {
 				this.profileCard.show(person, item);
 			});
@@ -150,16 +246,42 @@ export class PeopleView extends ItemView {
 	}
 
 	private sortPeople(people: PersonNote[]): PersonNote[] {
+		const FAR_FUTURE = '9999-99-99';
+		const FAR_PAST = '0000-00-00';
+
 		switch (this.sortMode) {
 			case 'alpha':
 				return [...people].sort((a, b) => a.name.localeCompare(b.name));
 
 			case 'recent':
 				return [...people].sort((a, b) => {
-					const dateA = this.mentionScanner.getLastMentionDate(a.name) || '0000';
-					const dateB = this.mentionScanner.getLastMentionDate(b.name) || '0000';
+					const dateA = this.mentionScanner.getLastMentionDate(a.name) || FAR_PAST;
+					const dateB = this.mentionScanner.getLastMentionDate(b.name) || FAR_PAST;
 					return dateB.localeCompare(dateA);
 				});
+
+			case 'last-contact':
+				return [...people].sort((a, b) => {
+					const dateA = a.lastContact || FAR_PAST;
+					const dateB = b.lastContact || FAR_PAST;
+					return dateB.localeCompare(dateA);
+				});
+
+			case 'next-follow-up':
+				return [...people].sort((a, b) => {
+					const dateA = (a.followUpStatus === 'done' ? FAR_FUTURE : a.nextFollowUp) || FAR_FUTURE;
+					const dateB = (b.followUpStatus === 'done' ? FAR_FUTURE : b.nextFollowUp) || FAR_FUTURE;
+					return dateA.localeCompare(dateB);
+				});
+
+			case 'deal-stage': {
+				const stageOrder = ['lead', 'prospect', 'proposal', 'negotiation', 'closed-won', 'closed-lost', 'nurture'];
+				return [...people].sort((a, b) => {
+					const ia = a.dealStage ? stageOrder.indexOf(a.dealStage) : stageOrder.length;
+					const ib = b.dealStage ? stageOrder.indexOf(b.dealStage) : stageOrder.length;
+					return ia !== ib ? ia - ib : a.name.localeCompare(b.name);
+				});
+			}
 
 			case 'relationship':
 				return [...people].sort((a, b) => {

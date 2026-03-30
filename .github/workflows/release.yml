@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  PLUGIN_ID: arcadia-connect
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: node esbuild.config.mjs production
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes "Release $TAG" \
+            main.js \
+            manifest.json \
+            styles.css 2>/dev/null || \
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes "Release $TAG" \
+            main.js \
+            manifest.json

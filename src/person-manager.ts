@@ -1,5 +1,5 @@
 import { App, TFile, TFolder, normalizePath, FrontMatterCache } from 'obsidian';
-import { PersonNote, PERSON_NOTE_TEMPLATE } from './types';
+import { PersonNote, PERSON_NOTE_TEMPLATE, DealStage } from './types';
 
 export class PersonManager {
 	private app: App;
@@ -48,7 +48,8 @@ export class PersonManager {
 
 		const fm: FrontMatterCache = cache.frontmatter;
 
-		if (fm.type !== 'person') {
+		// Accept both old (type: person) and new (file-role: crm-contact) formats
+		if (fm.type !== 'person' && fm['file-role'] !== 'crm-contact') {
 			return null;
 		}
 
@@ -68,6 +69,12 @@ export class PersonManager {
 			relationshipType: fm['relationship-type'] ? String(fm['relationship-type']) : undefined,
 			tags: Array.isArray(fm.tags) ? fm.tags.map(String) : undefined,
 			photo: fm.photo ? String(fm.photo) : undefined,
+			// CRM fields
+			lastContact: fm['last-contact'] ? String(fm['last-contact']) : undefined,
+			nextFollowUp: fm['next-follow-up'] ? String(fm['next-follow-up']) : undefined,
+			followUpStatus: fm['follow-up-status'] as PersonNote['followUpStatus'] ?? 'pending',
+			dealStage: fm['deal-stage'] ? (fm['deal-stage'] as DealStage) : undefined,
+			dealValue: fm['deal-value'] ? Number(fm['deal-value']) : undefined,
 		};
 	}
 
@@ -88,7 +95,8 @@ export class PersonManager {
 			return (
 				p.name.toLowerCase().includes(lower) ||
 				(p.organization && p.organization.toLowerCase().includes(lower)) ||
-				(p.tags && p.tags.some(t => t.toLowerCase().includes(lower)))
+				(p.tags && p.tags.some(t => t.toLowerCase().includes(lower))) ||
+				(p.dealStage && p.dealStage.toLowerCase().includes(lower))
 			);
 		});
 	}
@@ -134,6 +142,64 @@ export class PersonManager {
 		return score;
 	}
 
+	getOverdueFollowUps(now: Date = new Date()): PersonNote[] {
+		const today = now.toISOString().split('T')[0];
+		return this.getAllPeople().filter(p => {
+			if (!p.nextFollowUp) return false;
+			if (p.followUpStatus === 'done') return false;
+			return p.nextFollowUp < today;
+		});
+	}
+
+	getDueToday(now: Date = new Date()): PersonNote[] {
+		const today = now.toISOString().split('T')[0];
+		return this.getAllPeople().filter(p => {
+			if (!p.nextFollowUp) return false;
+			if (p.followUpStatus === 'done') return false;
+			return p.nextFollowUp === today;
+		});
+	}
+
+	async updateFollowUpStatus(file: TFile, status: PersonNote['followUpStatus']): Promise<void> {
+		await this.app.fileManager.processFrontMatter(file, (fm) => {
+			fm['follow-up-status'] = status;
+		});
+	}
+
+	async logInteraction(
+		person: PersonNote,
+		type: string,
+		summary: string,
+		date: string
+	): Promise<void> {
+		// Update last-contact in frontmatter
+		await this.app.fileManager.processFrontMatter(person.file, (fm) => {
+			fm['last-contact'] = date;
+			// Mark follow-up done if it was pending and the due date has passed
+			if (fm['follow-up-status'] === 'pending' && fm['next-follow-up'] && fm['next-follow-up'] <= date) {
+				fm['follow-up-status'] = 'done';
+			}
+		});
+
+		// Append interaction entry to note body
+		const content = await this.app.vault.read(person.file);
+		const interactionLine = `- ${date} — **${type}**: ${summary}`;
+
+		let updatedContent: string;
+		const logHeader = '## Interaction Log';
+		if (content.includes(logHeader)) {
+			updatedContent = content.replace(
+				logHeader + '\n',
+				logHeader + '\n' + interactionLine + '\n'
+			);
+		} else {
+			updatedContent = content + '\n' + logHeader + '\n' + interactionLine + '\n';
+		}
+
+		await this.app.vault.modify(person.file, updatedContent);
+		this.updatePerson(person.file);
+	}
+
 	async createPersonNote(name: string): Promise<TFile> {
 		const folderPath = normalizePath(this.peopleFolder);
 		const folder = this.app.vault.getAbstractFileByPath(folderPath);
@@ -150,6 +216,7 @@ export class PersonManager {
 		const person: PersonNote = {
 			file,
 			name,
+			followUpStatus: 'pending',
 		};
 		this.people.set(name.toLowerCase(), person);
 

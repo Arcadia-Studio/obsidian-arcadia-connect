@@ -21,6 +21,26 @@ export const DEFAULT_SETTINGS: ArcadiaConnectSettings = {
 	isPro: false,
 };
 
+export type DealStage =
+	| 'lead'
+	| 'prospect'
+	| 'proposal'
+	| 'negotiation'
+	| 'closed-won'
+	| 'closed-lost'
+	| 'nurture';
+
+export type RelationshipType =
+	| 'client'
+	| 'prospect'
+	| 'partner'
+	| 'vendor'
+	| 'personal'
+	| 'colleague'
+	| string;
+
+export type InteractionType = 'call' | 'email' | 'meeting' | 'note' | 'other';
+
 export interface PersonNote {
 	file: TFile;
 	name: string;
@@ -29,9 +49,24 @@ export interface PersonNote {
 	organization?: string;
 	role?: string;
 	birthday?: string;
-	relationshipType?: string;
+	relationshipType?: RelationshipType;
 	tags?: string[];
 	photo?: string;
+	// CRM fields
+	lastContact?: string;       // ISO date string YYYY-MM-DD
+	nextFollowUp?: string;      // ISO date string YYYY-MM-DD
+	followUpStatus?: 'pending' | 'done' | 'snoozed';
+	dealStage?: DealStage;
+	dealValue?: number;
+	notes?: string;
+}
+
+export interface InteractionEntry {
+	date: string;          // ISO date YYYY-MM-DD
+	type: InteractionType;
+	summary: string;
+	contactName: string;
+	contactFile: TFile;
 }
 
 export interface MentionInstance {
@@ -43,8 +78,10 @@ export interface MentionInstance {
 }
 
 export const VIEW_TYPE_PEOPLE = 'arcadia-connect-people';
+export const VIEW_TYPE_TIMELINE = 'arcadia-connect-timeline';
 
 export const PERSON_NOTE_TEMPLATE = `---
+file-role: crm-contact
 type: person
 name: "{{name}}"
 email: ""
@@ -53,7 +90,13 @@ organization: ""
 role: ""
 birthday: ""
 relationship-type: ""
-tags: []
+last-contact: ""
+next-follow-up: ""
+follow-up-status: pending
+deal-stage: ""
+deal-value: 0
+tags:
+  - type/crm-contact
 ---
 
 # {{name}}
@@ -61,4 +104,33 @@ tags: []
 ## About
 
 ## Interaction Log
+
 `;
+
+export const INTERACTION_TYPES: Record<InteractionType, string> = {
+	call: '📞 Call',
+	email: '📧 Email',
+	meeting: '🤝 Meeting',
+	note: '📝 Note',
+	other: '💬 Other',
+};
+
+export const DEAL_STAGE_LABELS: Record<DealStage, string> = {
+	lead: 'Lead',
+	prospect: 'Prospect',
+	proposal: 'Proposal',
+	negotiation: 'Negotiation',
+	'closed-won': 'Closed Won',
+	'closed-lost': 'Closed Lost',
+	nurture: 'Nurture',
+};
+
+export const DEAL_STAGE_ORDER: DealStage[] = [
+	'lead',
+	'prospect',
+	'proposal',
+	'negotiation',
+	'closed-won',
+	'closed-lost',
+	'nurture',
+];
