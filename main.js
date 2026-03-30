@@ -28,7 +28,7 @@ __export(main_exports, {
   default: () => ArcadiaConnectPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian5 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 
 // src/types.ts
 var DEFAULT_SETTINGS = {
@@ -37,10 +37,12 @@ var DEFAULT_SETTINGS = {
   showHoverCard: true,
   autoCreatePerson: true,
   licenseKey: "",
+  licenseStatus: null,
   isPro: false
 };
 var VIEW_TYPE_PEOPLE = "arcadia-connect-people";
 var PERSON_NOTE_TEMPLATE = `---
+file-role: crm-contact
 type: person
 name: "{{name}}"
 email: ""
@@ -49,7 +51,13 @@ organization: ""
 role: ""
 birthday: ""
 relationship-type: ""
-tags: []
+last-contact: ""
+next-follow-up: ""
+follow-up-status: pending
+deal-stage: ""
+deal-value: 0
+tags:
+  - type/crm-contact
 ---
 
 # {{name}}
@@ -57,10 +65,58 @@ tags: []
 ## About
 
 ## Interaction Log
+
 `;
+var INTERACTION_TYPES = {
+  call: "\u{1F4DE} Call",
+  email: "\u{1F4E7} Email",
+  meeting: "\u{1F91D} Meeting",
+  note: "\u{1F4DD} Note",
+  other: "\u{1F4AC} Other"
+};
+var DEAL_STAGE_LABELS = {
+  lead: "Lead",
+  prospect: "Prospect",
+  proposal: "Proposal",
+  negotiation: "Negotiation",
+  "closed-won": "Closed Won",
+  "closed-lost": "Closed Lost",
+  nurture: "Nurture"
+};
 
 // src/settings.ts
 var import_obsidian = require("obsidian");
+
+// src/license.ts
+var LICENSE_CACHE_DURATION = 24 * 60 * 60 * 1e3;
+async function validateLicense(licenseKey, instanceName = "obsidian") {
+  var _a, _b, _c;
+  try {
+    const response = await fetch("https://api.lemonsqueezy.com/v1/licenses/validate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({ license_key: licenseKey, instance_name: instanceName })
+    });
+    const data = await response.json();
+    if (data.valid) {
+      return {
+        valid: true,
+        instanceId: (_a = data.instance) == null ? void 0 : _a.id,
+        customerEmail: (_b = data.meta) == null ? void 0 : _b.customer_email,
+        expiresAt: (_c = data.license_key) == null ? void 0 : _c.expires_at,
+        lastChecked: Date.now()
+      };
+    }
+    return { valid: false, lastChecked: Date.now() };
+  } catch (e) {
+    return { valid: false, lastChecked: Date.now() };
+  }
+}
+
+// src/settings.ts
 var ArcadiaConnectSettingTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -87,10 +143,45 @@ var ArcadiaConnectSettingTab = class extends import_obsidian.PluginSettingTab {
       await this.plugin.saveSettings();
     }));
     containerEl.createEl("h3", { text: "License" });
-    new import_obsidian.Setting(containerEl).setName("License key").setDesc("Enter your Arcadia Connect Pro license key.").addText((text) => text.setPlaceholder("Enter license key").setValue(this.plugin.settings.licenseKey).onChange(async (value) => {
-      this.plugin.settings.licenseKey = value;
-      await this.plugin.saveSettings();
-    }));
+    const licenseStatus = this.plugin.settings.licenseStatus;
+    const isPro = this.plugin.settings.isPro && (licenseStatus == null ? void 0 : licenseStatus.valid);
+    const statusDesc = isPro ? `Active${(licenseStatus == null ? void 0 : licenseStatus.customerEmail) ? ` (${licenseStatus.customerEmail})` : ""}${(licenseStatus == null ? void 0 : licenseStatus.expiresAt) ? ` - expires ${licenseStatus.expiresAt}` : ""}` : "No active license. Enter your license key and click Validate.";
+    const licenseStatusEl = containerEl.createEl("p", {
+      text: `License status: ${statusDesc}`,
+      cls: isPro ? "mod-success" : "mod-warning"
+    });
+    let keyInputEl = null;
+    new import_obsidian.Setting(containerEl).setName("License key").setDesc("Enter your Arcadia Connect Premium license key from Lemon Squeezy.").addText((text) => {
+      keyInputEl = text.inputEl;
+      text.setPlaceholder("XXXX-XXXX-XXXX-XXXX").setValue(this.plugin.settings.licenseKey).onChange(async (value) => {
+        this.plugin.settings.licenseKey = value.trim();
+        await this.plugin.saveSettings();
+      });
+    }).addButton(
+      (btn) => btn.setButtonText("Validate").setCta().onClick(async () => {
+        const key = this.plugin.settings.licenseKey.trim();
+        if (!key)
+          return;
+        btn.setButtonText("Checking...").setDisabled(true);
+        const status = await validateLicense(key);
+        this.plugin.settings.licenseStatus = status;
+        this.plugin.settings.isPro = status.valid;
+        await this.plugin.saveSettings();
+        btn.setButtonText("Validate").setDisabled(false);
+        if (status.valid) {
+          licenseStatusEl.textContent = `License status: Active${status.customerEmail ? ` (${status.customerEmail})` : ""}`;
+          licenseStatusEl.className = "mod-success";
+        } else {
+          licenseStatusEl.textContent = "License status: Invalid or expired. Check your key and try again.";
+          licenseStatusEl.className = "mod-warning";
+        }
+      })
+    );
+    new import_obsidian.Setting(containerEl).addButton(
+      (btn) => btn.setButtonText("Get Arcadia Connect Premium").onClick(() => {
+        window.open("https://arcadia-studio.lemonsqueezy.com", "_blank");
+      })
+    );
   }
 };
 
@@ -126,12 +217,13 @@ var PersonManager = class {
     }
   }
   parsePersonFile(file) {
+    var _a;
     const cache = this.app.metadataCache.getFileCache(file);
     if (!(cache == null ? void 0 : cache.frontmatter)) {
       return null;
     }
     const fm = cache.frontmatter;
-    if (fm.type !== "person") {
+    if (fm.type !== "person" && fm["file-role"] !== "crm-contact") {
       return null;
     }
     const name = fm.name || file.basename;
@@ -148,7 +240,13 @@ var PersonManager = class {
       birthday: fm.birthday ? String(fm.birthday) : void 0,
       relationshipType: fm["relationship-type"] ? String(fm["relationship-type"]) : void 0,
       tags: Array.isArray(fm.tags) ? fm.tags.map(String) : void 0,
-      photo: fm.photo ? String(fm.photo) : void 0
+      photo: fm.photo ? String(fm.photo) : void 0,
+      // CRM fields
+      lastContact: fm["last-contact"] ? String(fm["last-contact"]) : void 0,
+      nextFollowUp: fm["next-follow-up"] ? String(fm["next-follow-up"]) : void 0,
+      followUpStatus: (_a = fm["follow-up-status"]) != null ? _a : "pending",
+      dealStage: fm["deal-stage"] ? fm["deal-stage"] : void 0,
+      dealValue: fm["deal-value"] ? Number(fm["deal-value"]) : void 0
     };
   }
   getAllPeople() {
@@ -163,7 +261,7 @@ var PersonManager = class {
     }
     const lower = query.toLowerCase();
     return this.getAllPeople().filter((p) => {
-      return p.name.toLowerCase().includes(lower) || p.organization && p.organization.toLowerCase().includes(lower) || p.tags && p.tags.some((t) => t.toLowerCase().includes(lower));
+      return p.name.toLowerCase().includes(lower) || p.organization && p.organization.toLowerCase().includes(lower) || p.tags && p.tags.some((t) => t.toLowerCase().includes(lower)) || p.dealStage && p.dealStage.toLowerCase().includes(lower);
     });
   }
   fuzzyMatch(query) {
@@ -197,6 +295,53 @@ var PersonManager = class {
     }
     return score;
   }
+  getOverdueFollowUps(now = new Date()) {
+    const today = now.toISOString().split("T")[0];
+    return this.getAllPeople().filter((p) => {
+      if (!p.nextFollowUp)
+        return false;
+      if (p.followUpStatus === "done")
+        return false;
+      return p.nextFollowUp < today;
+    });
+  }
+  getDueToday(now = new Date()) {
+    const today = now.toISOString().split("T")[0];
+    return this.getAllPeople().filter((p) => {
+      if (!p.nextFollowUp)
+        return false;
+      if (p.followUpStatus === "done")
+        return false;
+      return p.nextFollowUp === today;
+    });
+  }
+  async updateFollowUpStatus(file, status) {
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      fm["follow-up-status"] = status;
+    });
+  }
+  async logInteraction(person, type, summary, date) {
+    await this.app.fileManager.processFrontMatter(person.file, (fm) => {
+      fm["last-contact"] = date;
+      if (fm["follow-up-status"] === "pending" && fm["next-follow-up"] && fm["next-follow-up"] <= date) {
+        fm["follow-up-status"] = "done";
+      }
+    });
+    const content = await this.app.vault.read(person.file);
+    const interactionLine = `- ${date} \u2014 **${type}**: ${summary}`;
+    let updatedContent;
+    const logHeader = "## Interaction Log";
+    if (content.includes(logHeader)) {
+      updatedContent = content.replace(
+        logHeader + "\n",
+        logHeader + "\n" + interactionLine + "\n"
+      );
+    } else {
+      updatedContent = content + "\n" + logHeader + "\n" + interactionLine + "\n";
+    }
+    await this.app.vault.modify(person.file, updatedContent);
+    this.updatePerson(person.file);
+  }
   async createPersonNote(name) {
     const folderPath = (0, import_obsidian2.normalizePath)(this.peopleFolder);
     const folder = this.app.vault.getAbstractFileByPath(folderPath);
@@ -208,7 +353,8 @@ var PersonManager = class {
     const file = await this.app.vault.create(filePath, content);
     const person = {
       file,
-      name
+      name,
+      followUpStatus: "pending"
     };
     this.people.set(name.toLowerCase(), person);
     return file;
@@ -559,12 +705,182 @@ var ProfileCard = class {
 };
 
 // src/people-view.ts
+var import_obsidian5 = require("obsidian");
+
+// src/interaction-logger.ts
 var import_obsidian4 = require("obsidian");
-var PeopleView = class extends import_obsidian4.ItemView {
+var InteractionLoggerModal = class extends import_obsidian4.Modal {
+  constructor(app, personManager, preselectedPerson = null, onSuccess) {
+    super(app);
+    this.personManager = personManager;
+    this.preselectedPerson = preselectedPerson;
+    this.onSuccess = onSuccess;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.addClass("arcadia-interaction-modal");
+    contentEl.createEl("h2", { text: "Log Interaction" });
+    const today = new Date().toISOString().split("T")[0];
+    let selectedPerson = this.preselectedPerson;
+    let selectedType = "call";
+    let selectedDate = today;
+    let summary = "";
+    let nextFollowUp = "";
+    if (!this.preselectedPerson) {
+      const people = this.personManager.getAllPeople();
+      new import_obsidian4.Setting(contentEl).setName("Person").setDesc("Who did you interact with?").addDropdown((dd) => {
+        dd.addOption("", "\u2014 Select person \u2014");
+        for (const p of people.sort((a, b) => a.name.localeCompare(b.name))) {
+          dd.addOption(p.name, p.name);
+        }
+        dd.onChange((value) => {
+          var _a;
+          selectedPerson = (_a = this.personManager.getPersonByName(value)) != null ? _a : null;
+        });
+      });
+    } else {
+      contentEl.createEl("p", {
+        text: `Contact: ${this.preselectedPerson.name}`,
+        cls: "arcadia-interaction-contact-name"
+      });
+    }
+    new import_obsidian4.Setting(contentEl).setName("Type").addDropdown((dd) => {
+      for (const [value, label] of Object.entries(INTERACTION_TYPES)) {
+        dd.addOption(value, label);
+      }
+      dd.setValue("call");
+      dd.onChange((value) => {
+        selectedType = value;
+      });
+    });
+    new import_obsidian4.Setting(contentEl).setName("Date").addText((text) => {
+      text.setValue(today);
+      text.inputEl.type = "date";
+      text.onChange((value) => {
+        selectedDate = value;
+      });
+    });
+    new import_obsidian4.Setting(contentEl).setName("Summary").setDesc("Brief description of the interaction").addTextArea((ta) => {
+      ta.setPlaceholder("What was discussed or decided?");
+      ta.inputEl.rows = 3;
+      ta.onChange((value) => {
+        summary = value;
+      });
+    });
+    new import_obsidian4.Setting(contentEl).setName("Next follow-up").setDesc("Optional: schedule a follow-up").addText((text) => {
+      text.inputEl.type = "date";
+      text.onChange((value) => {
+        nextFollowUp = value;
+      });
+    });
+    const buttonRow = contentEl.createDiv({ cls: "arcadia-interaction-buttons" });
+    const cancelBtn = buttonRow.createEl("button", { text: "Cancel" });
+    cancelBtn.addEventListener("click", () => this.close());
+    const saveBtn = buttonRow.createEl("button", {
+      text: "Log Interaction",
+      cls: "mod-cta"
+    });
+    saveBtn.addEventListener("click", async () => {
+      var _a;
+      if (!selectedPerson) {
+        new import_obsidian4.Notice("Please select a person.");
+        return;
+      }
+      if (!summary.trim()) {
+        new import_obsidian4.Notice("Please add a summary.");
+        return;
+      }
+      try {
+        await this.personManager.logInteraction(
+          selectedPerson,
+          INTERACTION_TYPES[selectedType],
+          summary.trim(),
+          selectedDate
+        );
+        if (nextFollowUp) {
+          await this.app.fileManager.processFrontMatter(selectedPerson.file, (fm) => {
+            fm["next-follow-up"] = nextFollowUp;
+            fm["follow-up-status"] = "pending";
+          });
+        }
+        new import_obsidian4.Notice(`Logged interaction with ${selectedPerson.name}`);
+        this.close();
+        (_a = this.onSuccess) == null ? void 0 : _a.call(this);
+      } catch (e) {
+        new import_obsidian4.Notice("Failed to log interaction. Check console for details.");
+        console.error("Interaction log error:", e);
+      }
+    });
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+var SetFollowUpModal = class extends import_obsidian4.Modal {
+  constructor(app, person, personManager, onSuccess) {
+    super(app);
+    this.person = person;
+    this.personManager = personManager;
+    this.onSuccess = onSuccess;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.addClass("arcadia-followup-modal");
+    contentEl.createEl("h2", { text: `Follow-up: ${this.person.name}` });
+    let followUpDate = "";
+    let notes = "";
+    new import_obsidian4.Setting(contentEl).setName("Follow-up date").addText((text) => {
+      text.inputEl.type = "date";
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      text.setValue(nextWeek.toISOString().split("T")[0]);
+      followUpDate = nextWeek.toISOString().split("T")[0];
+      text.onChange((value) => {
+        followUpDate = value;
+      });
+    });
+    new import_obsidian4.Setting(contentEl).setName("Note").setDesc("What to follow up about (optional)").addText((text) => {
+      text.setPlaceholder("Reminder note...");
+      text.onChange((value) => {
+        notes = value;
+      });
+    });
+    const buttonRow = contentEl.createDiv({ cls: "arcadia-interaction-buttons" });
+    const cancelBtn = buttonRow.createEl("button", { text: "Cancel" });
+    cancelBtn.addEventListener("click", () => this.close());
+    const saveBtn = buttonRow.createEl("button", { text: "Set Follow-up", cls: "mod-cta" });
+    saveBtn.addEventListener("click", async () => {
+      var _a;
+      if (!followUpDate) {
+        new import_obsidian4.Notice("Please select a date.");
+        return;
+      }
+      await this.app.fileManager.processFrontMatter(this.person.file, (fm) => {
+        fm["next-follow-up"] = followUpDate;
+        fm["follow-up-status"] = "pending";
+        if (notes.trim()) {
+          fm["follow-up-note"] = notes.trim();
+        }
+      });
+      new import_obsidian4.Notice(`Follow-up set for ${this.person.name} on ${followUpDate}`);
+      this.close();
+      (_a = this.onSuccess) == null ? void 0 : _a.call(this);
+    });
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
+// src/people-view.ts
+var PeopleView = class extends import_obsidian5.ItemView {
   constructor(leaf, personManager, mentionScanner, profileCard) {
     super(leaf);
     this.searchQuery = "";
     this.sortMode = "alpha";
+    this.filterOverdue = false;
     this.listEl = null;
     this.personManager = personManager;
     this.mentionScanner = mentionScanner;
@@ -597,7 +913,10 @@ var PeopleView = class extends import_obsidian4.ItemView {
     const sortSelect = controls.createEl("select", { cls: "arcadia-connect-sort-select" });
     const sortOptions = [
       { value: "alpha", label: "A-Z" },
-      { value: "recent", label: "Recent" },
+      { value: "recent", label: "Recent mention" },
+      { value: "last-contact", label: "Last contacted" },
+      { value: "next-follow-up", label: "Follow-up due" },
+      { value: "deal-stage", label: "Deal stage" },
       { value: "relationship", label: "Relationship" }
     ];
     for (const opt of sortOptions) {
@@ -606,45 +925,100 @@ var PeopleView = class extends import_obsidian4.ItemView {
     sortSelect.value = this.sortMode;
     sortSelect.addEventListener("change", () => {
       this.sortMode = sortSelect.value;
+      this.filterOverdue = false;
+      this.renderList();
+    });
+    const overdueBtn = controls.createEl("button", {
+      cls: "arcadia-connect-overdue-btn",
+      text: "\u23F0",
+      attr: { title: "Show overdue follow-ups" }
+    });
+    overdueBtn.addEventListener("click", () => {
+      this.filterOverdue = !this.filterOverdue;
+      overdueBtn.toggleClass("is-active", this.filterOverdue);
       this.renderList();
     });
     const newBtn = controls.createEl("button", {
       cls: "arcadia-connect-new-btn",
-      text: "+ New Person"
+      text: "+ Person"
     });
     newBtn.addEventListener("click", () => {
       this.createNewPerson();
+    });
+    const logBtn = controls.createEl("button", {
+      cls: "arcadia-connect-log-btn",
+      text: "+ Log",
+      attr: { title: "Log an interaction" }
+    });
+    logBtn.addEventListener("click", () => {
+      new InteractionLoggerModal(this.app, this.personManager, null, () => {
+        this.renderList();
+      }).open();
     });
     this.listEl = container.createDiv({ cls: "arcadia-connect-people-list" });
     this.renderList();
   }
   renderList() {
+    var _a;
     if (!this.listEl)
       return;
     this.listEl.empty();
     let people = this.searchQuery ? this.personManager.searchPeople(this.searchQuery) : this.personManager.getAllPeople();
+    if (this.filterOverdue) {
+      const today2 = new Date().toISOString().split("T")[0];
+      people = people.filter((p) => {
+        if (!p.nextFollowUp)
+          return false;
+        if (p.followUpStatus === "done")
+          return false;
+        return p.nextFollowUp <= today2;
+      });
+    }
     people = this.sortPeople(people);
     if (people.length === 0) {
       const empty = this.listEl.createDiv({ cls: "arcadia-connect-empty" });
-      empty.textContent = this.searchQuery ? "No people match your search." : "No people notes found. Create one to get started.";
+      if (this.filterOverdue) {
+        empty.textContent = "No overdue follow-ups.";
+      } else if (this.searchQuery) {
+        empty.textContent = "No people match your search.";
+      } else {
+        empty.textContent = "No people notes found. Create one to get started.";
+      }
       return;
     }
+    const today = new Date().toISOString().split("T")[0];
     for (const person of people) {
       const item = this.listEl.createDiv({ cls: "arcadia-connect-person-item" });
+      const followUpOverdue = person.nextFollowUp && person.followUpStatus !== "done" && person.nextFollowUp < today;
+      const followUpDueToday = person.nextFollowUp && person.followUpStatus !== "done" && person.nextFollowUp === today;
+      if (followUpOverdue)
+        item.addClass("has-overdue-followup");
+      if (followUpDueToday)
+        item.addClass("has-followup-today");
       const icon = item.createSpan({ cls: "arcadia-connect-person-icon" });
-      icon.textContent = "\u{1F464}";
+      icon.textContent = followUpOverdue ? "\u23F0" : followUpDueToday ? "\u{1F514}" : "\u{1F464}";
       const info = item.createDiv({ cls: "arcadia-connect-person-info" });
       info.createDiv({ cls: "arcadia-connect-person-name", text: person.name });
       const meta = [];
       if (person.organization)
         meta.push(person.organization);
-      if (person.relationshipType)
-        meta.push(person.relationshipType);
+      if (person.dealStage)
+        meta.push((_a = DEAL_STAGE_LABELS[person.dealStage]) != null ? _a : person.dealStage);
       if (meta.length > 0) {
         info.createDiv({
           cls: "arcadia-connect-person-meta",
           text: meta.join(" \xB7 ")
         });
+      }
+      if (person.lastContact || person.nextFollowUp) {
+        const dateLine = info.createDiv({ cls: "arcadia-connect-person-dates" });
+        if (person.lastContact) {
+          dateLine.createSpan({ cls: "arcadia-date-last", text: `Last: ${person.lastContact}` });
+        }
+        if (person.nextFollowUp && person.followUpStatus !== "done") {
+          const cls = followUpOverdue ? "arcadia-date-followup overdue" : followUpDueToday ? "arcadia-date-followup due-today" : "arcadia-date-followup";
+          dateLine.createSpan({ cls, text: ` \xB7 Due: ${person.nextFollowUp}` });
+        }
       }
       const mentionCount = this.mentionScanner.getMentionCount(person.name);
       if (mentionCount > 0) {
@@ -652,6 +1026,29 @@ var PeopleView = class extends import_obsidian4.ItemView {
         badge.textContent = String(mentionCount);
         badge.setAttribute("title", `${mentionCount} mention${mentionCount === 1 ? "" : "s"}`);
       }
+      const actions = item.createDiv({ cls: "arcadia-connect-item-actions" });
+      const logBtn = actions.createEl("button", {
+        cls: "arcadia-connect-action-btn",
+        text: "+ Log",
+        attr: { title: "Log interaction" }
+      });
+      logBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        new InteractionLoggerModal(this.app, this.personManager, person, () => {
+          this.renderList();
+        }).open();
+      });
+      const followUpBtn = actions.createEl("button", {
+        cls: "arcadia-connect-action-btn",
+        text: "\u{1F4C5}",
+        attr: { title: "Set follow-up" }
+      });
+      followUpBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        new SetFollowUpModal(this.app, person, this.personManager, () => {
+          this.renderList();
+        }).open();
+      });
       item.addEventListener("click", () => {
         this.app.workspace.openLinkText(person.file.path, "", false);
       });
@@ -664,15 +1061,37 @@ var PeopleView = class extends import_obsidian4.ItemView {
     }
   }
   sortPeople(people) {
+    const FAR_FUTURE = "9999-99-99";
+    const FAR_PAST = "0000-00-00";
     switch (this.sortMode) {
       case "alpha":
         return [...people].sort((a, b) => a.name.localeCompare(b.name));
       case "recent":
         return [...people].sort((a, b) => {
-          const dateA = this.mentionScanner.getLastMentionDate(a.name) || "0000";
-          const dateB = this.mentionScanner.getLastMentionDate(b.name) || "0000";
+          const dateA = this.mentionScanner.getLastMentionDate(a.name) || FAR_PAST;
+          const dateB = this.mentionScanner.getLastMentionDate(b.name) || FAR_PAST;
           return dateB.localeCompare(dateA);
         });
+      case "last-contact":
+        return [...people].sort((a, b) => {
+          const dateA = a.lastContact || FAR_PAST;
+          const dateB = b.lastContact || FAR_PAST;
+          return dateB.localeCompare(dateA);
+        });
+      case "next-follow-up":
+        return [...people].sort((a, b) => {
+          const dateA = (a.followUpStatus === "done" ? FAR_FUTURE : a.nextFollowUp) || FAR_FUTURE;
+          const dateB = (b.followUpStatus === "done" ? FAR_FUTURE : b.nextFollowUp) || FAR_FUTURE;
+          return dateA.localeCompare(dateB);
+        });
+      case "deal-stage": {
+        const stageOrder = ["lead", "prospect", "proposal", "negotiation", "closed-won", "closed-lost", "nurture"];
+        return [...people].sort((a, b) => {
+          const ia = a.dealStage ? stageOrder.indexOf(a.dealStage) : stageOrder.length;
+          const ib = b.dealStage ? stageOrder.indexOf(b.dealStage) : stageOrder.length;
+          return ia !== ib ? ia - ib : a.name.localeCompare(b.name);
+        });
+      }
       case "relationship":
         return [...people].sort((a, b) => {
           const typeA = a.relationshipType || "zzz";
@@ -836,8 +1255,75 @@ function mentionCompletionSource(context, personManager, settings) {
   };
 }
 
+// src/followup-engine.ts
+var import_obsidian6 = require("obsidian");
+var CHECK_INTERVAL_MS = 60 * 60 * 1e3;
+var FollowUpEngine = class {
+  constructor(personManager) {
+    this.intervalId = null;
+    this.firedToday = /* @__PURE__ */ new Set();
+    this.lastFiredDate = "";
+    this.personManager = personManager;
+  }
+  start() {
+    this.check();
+    this.intervalId = window.setInterval(() => this.check(), CHECK_INTERVAL_MS);
+  }
+  stop() {
+    if (this.intervalId !== null) {
+      window.clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
+  check() {
+    const today = new Date().toISOString().split("T")[0];
+    if (today !== this.lastFiredDate) {
+      this.firedToday.clear();
+      this.lastFiredDate = today;
+    }
+    const overdue = this.personManager.getOverdueFollowUps();
+    const dueToday = this.personManager.getDueToday();
+    for (const person of dueToday) {
+      const key = `today:${person.file.path}`;
+      if (!this.firedToday.has(key)) {
+        this.firedToday.add(key);
+        this.showFollowUpNotice(person, false);
+      }
+    }
+    if (overdue.length > 0) {
+      const overdueKey = `overdue:${today}`;
+      if (!this.firedToday.has(overdueKey)) {
+        this.firedToday.add(overdueKey);
+        this.showOverdueSummary(overdue);
+      }
+    }
+  }
+  showFollowUpNotice(person, isOverdue) {
+    const prefix = isOverdue ? "Overdue" : "Follow-up due today";
+    const msg = `${prefix}: ${person.name}`;
+    if (person.organization) {
+      new import_obsidian6.Notice(`${msg} (${person.organization})`, 8e3);
+    } else {
+      new import_obsidian6.Notice(msg, 8e3);
+    }
+  }
+  showOverdueSummary(overdue) {
+    if (overdue.length === 1) {
+      this.showFollowUpNotice(overdue[0], true);
+    } else {
+      const names = overdue.slice(0, 3).map((p) => p.name).join(", ");
+      const extra = overdue.length > 3 ? ` +${overdue.length - 3} more` : "";
+      new import_obsidian6.Notice(`${overdue.length} overdue follow-ups: ${names}${extra}`, 1e4);
+    }
+  }
+  // Force a check (e.g., after vault opens or settings change)
+  forceCheck() {
+    this.check();
+  }
+};
+
 // src/main.ts
-var ArcadiaConnectPlugin = class extends import_obsidian5.Plugin {
+var ArcadiaConnectPlugin = class extends import_obsidian7.Plugin {
   constructor() {
     super(...arguments);
     this.settings = DEFAULT_SETTINGS;
@@ -847,6 +1333,7 @@ var ArcadiaConnectPlugin = class extends import_obsidian5.Plugin {
     this.personManager = new PersonManager(this.app, this.settings.peopleFolder);
     this.mentionScanner = new MentionScanner(this.app, this.settings.peopleFolder);
     this.profileCard = new ProfileCard(this.app);
+    this.followUpEngine = new FollowUpEngine(this.personManager);
     this.mentionPostProcessor = new MentionPostProcessor(
       this.app,
       this.personManager,
@@ -892,9 +1379,19 @@ var ArcadiaConnectPlugin = class extends import_obsidian5.Plugin {
         editor.replaceSelection(this.settings.triggerChar || "@");
       }
     });
+    this.addCommand({
+      id: "log-interaction",
+      name: "Log Interaction",
+      callback: () => {
+        new InteractionLoggerModal(this.app, this.personManager, null, () => {
+          this.refreshPeopleView();
+        }).open();
+      }
+    });
     this.app.workspace.onLayoutReady(async () => {
       await this.personManager.initialize();
       await this.mentionScanner.buildIndex();
+      this.followUpEngine.start();
     });
     this.registerEvent(
       this.app.metadataCache.on("changed", (file) => {
@@ -907,7 +1404,7 @@ var ArcadiaConnectPlugin = class extends import_obsidian5.Plugin {
     );
     this.registerEvent(
       this.app.vault.on("delete", (file) => {
-        if (file instanceof import_obsidian5.TFile) {
+        if (file instanceof import_obsidian7.TFile) {
           if (this.personManager.isInPeopleFolder(file)) {
             this.personManager.removePerson(file);
           }
@@ -918,7 +1415,7 @@ var ArcadiaConnectPlugin = class extends import_obsidian5.Plugin {
     );
     this.registerEvent(
       this.app.vault.on("create", (file) => {
-        if (file instanceof import_obsidian5.TFile && this.personManager.isInPeopleFolder(file)) {
+        if (file instanceof import_obsidian7.TFile && this.personManager.isInPeopleFolder(file)) {
           setTimeout(() => {
             this.personManager.updatePerson(file);
             this.refreshPeopleView();
@@ -928,7 +1425,7 @@ var ArcadiaConnectPlugin = class extends import_obsidian5.Plugin {
     );
     this.registerEvent(
       this.app.vault.on("rename", (file, oldPath) => {
-        if (file instanceof import_obsidian5.TFile) {
+        if (file instanceof import_obsidian7.TFile) {
           setTimeout(() => {
             this.personManager.scanPeopleFolder();
             this.mentionScanner.buildIndex();
@@ -939,6 +1436,7 @@ var ArcadiaConnectPlugin = class extends import_obsidian5.Plugin {
     );
   }
   async onunload() {
+    this.followUpEngine.stop();
     this.profileCard.destroy();
   }
   async loadSettings() {
