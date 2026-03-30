@@ -12,10 +12,12 @@ env:
   PLUGIN_ID: arcadia-connect
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -31,19 +33,42 @@ jobs:
       - name: Build
         run: node esbuild.config.mjs production
 
-      - name: Create release
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Verify manifest version matches tag
+        run: |
+          MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
+          TAG_VERSION="${{ steps.version.outputs.VERSION }}"
+          if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
+            echo "ERROR: manifest.json version ($MANIFEST_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+
+      - name: Generate changelog from git log
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            NOTES=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s" --no-merges | head -30)
+          else
+            NOTES=$(git log --pretty=format:"- %s" --no-merges | head -30)
+          fi
+          {
+            echo "NOTES<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG=${GITHUB_REF#refs/tags/}
           gh release create "$TAG" \
-            --title "$TAG" \
-            --notes "Release $TAG" \
+            --title "Arcadia Connect $TAG" \
+            --notes "${{ steps.changelog.outputs.NOTES }}" \
             main.js \
             manifest.json \
-            styles.css 2>/dev/null || \
-          gh release create "$TAG" \
-            --title "$TAG" \
-            --notes "Release $TAG" \
-            main.js \
-            manifest.json
+            styles.css
