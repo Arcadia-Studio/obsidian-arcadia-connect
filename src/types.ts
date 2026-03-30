@@ -1,6 +1,8 @@
 import { TFile } from 'obsidian';
 import type { LicenseStatus } from './license';
 
+export type AIProvider = 'anthropic' | 'openai';
+
 export interface ArcadiaConnectSettings {
 	peopleFolder: string;
 	triggerChar: string;
@@ -9,6 +11,11 @@ export interface ArcadiaConnectSettings {
 	licenseKey: string;
 	licenseStatus: LicenseStatus | null;
 	isPro: boolean;
+	// AI enrichment (BYOK)
+	aiProvider: AIProvider;
+	anthropicApiKey: string;
+	openaiApiKey: string;
+	openaiModel: string;
 }
 
 export const DEFAULT_SETTINGS: ArcadiaConnectSettings = {
@@ -19,6 +26,10 @@ export const DEFAULT_SETTINGS: ArcadiaConnectSettings = {
 	licenseKey: '',
 	licenseStatus: null,
 	isPro: false,
+	aiProvider: 'anthropic',
+	anthropicApiKey: '',
+	openaiApiKey: '',
+	openaiModel: 'gpt-4o-mini',
 };
 
 export type DealStage =
@@ -79,6 +90,7 @@ export interface MentionInstance {
 
 export const VIEW_TYPE_PEOPLE = 'arcadia-connect-people';
 export const VIEW_TYPE_TIMELINE = 'arcadia-connect-timeline';
+export const VIEW_TYPE_PIPELINE = 'arcadia-connect-pipeline';
 
 export const PERSON_NOTE_TEMPLATE = `---
 file-role: crm-contact

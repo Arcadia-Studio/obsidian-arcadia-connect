@@ -116,5 +116,65 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 					window.open('https://arcadia-studio.lemonsqueezy.com', '_blank');
 				})
 			);
+
+		// ----- AI Enrichment -----
+		containerEl.createEl('h3', { text: 'AI Enrichment (BYOK)' });
+		containerEl.createEl('p', {
+			text: 'Bring your own API key to unlock AI-powered follow-up suggestions. Keys are stored locally in your vault settings and never sent to Arcadia servers.',
+			cls: 'setting-item-description',
+		});
+
+		new Setting(containerEl)
+			.setName('AI provider')
+			.addDropdown(dd => dd
+				.addOption('anthropic', 'Anthropic (Claude)')
+				.addOption('openai', 'OpenAI')
+				.setValue(this.plugin.settings.aiProvider)
+				.onChange(async (value) => {
+					this.plugin.settings.aiProvider = value as ArcadiaConnectSettings['aiProvider'];
+					await this.plugin.saveSettings();
+					this.display(); // re-render to show/hide relevant key field
+				})
+			);
+
+		if (this.plugin.settings.aiProvider === 'anthropic') {
+			new Setting(containerEl)
+				.setName('Anthropic API key')
+				.setDesc('Your key from console.anthropic.com')
+				.addText(text => text
+					.setPlaceholder('sk-ant-...')
+					.setValue(this.plugin.settings.anthropicApiKey)
+					.onChange(async (value) => {
+						this.plugin.settings.anthropicApiKey = value.trim();
+						await this.plugin.saveSettings();
+					})
+				);
+		} else {
+			new Setting(containerEl)
+				.setName('OpenAI API key')
+				.setDesc('Your key from platform.openai.com')
+				.addText(text => text
+					.setPlaceholder('sk-...')
+					.setValue(this.plugin.settings.openaiApiKey)
+					.onChange(async (value) => {
+						this.plugin.settings.openaiApiKey = value.trim();
+						await this.plugin.saveSettings();
+					})
+				);
+
+			new Setting(containerEl)
+				.setName('OpenAI model')
+				.addDropdown(dd => dd
+					.addOption('gpt-4o-mini', 'GPT-4o mini (fast, cheap)')
+					.addOption('gpt-4o', 'GPT-4o (best quality)')
+					.addOption('gpt-4-turbo', 'GPT-4 Turbo')
+					.setValue(this.plugin.settings.openaiModel)
+					.onChange(async (value) => {
+						this.plugin.settings.openaiModel = value;
+						await this.plugin.saveSettings();
+					})
+				);
+		}
 	}
 }
+

@@ -1,14 +1,17 @@
 import { Plugin, WorkspaceLeaf, TFile } from 'obsidian';
-import { ArcadiaConnectSettings, DEFAULT_SETTINGS, VIEW_TYPE_PEOPLE } from './types';
+import { ArcadiaConnectSettings, DEFAULT_SETTINGS, VIEW_TYPE_PEOPLE, VIEW_TYPE_TIMELINE, VIEW_TYPE_PIPELINE } from './types';
 import { ArcadiaConnectSettingTab } from './settings';
 import { PersonManager } from './person-manager';
 import { MentionScanner } from './mention-scanner';
 import { MentionPostProcessor } from './mention-postprocessor';
 import { ProfileCard } from './profile-card';
 import { PeopleView } from './people-view';
+import { TimelineView } from './timeline-view';
+import { PipelineView } from './pipeline-view';
 import { createMentionExtension } from './mention-extension';
 import { InteractionLoggerModal } from './interaction-logger';
 import { FollowUpEngine } from './followup-engine';
+import { AISuggestionModal } from './ai-enrichment';
 
 export default class ArcadiaConnectPlugin extends Plugin {
 	settings: ArcadiaConnectSettings = DEFAULT_SETTINGS;
@@ -36,7 +39,7 @@ export default class ArcadiaConnectPlugin extends Plugin {
 		// Register settings tab
 		this.addSettingTab(new ArcadiaConnectSettingTab(this.app, this));
 
-		// Register the People sidebar view
+		// Register views
 		this.registerView(VIEW_TYPE_PEOPLE, (leaf: WorkspaceLeaf) => {
 			return new PeopleView(
 				leaf,
@@ -44,6 +47,14 @@ export default class ArcadiaConnectPlugin extends Plugin {
 				this.mentionScanner,
 				this.profileCard
 			);
+		});
+
+		this.registerView(VIEW_TYPE_TIMELINE, (leaf: WorkspaceLeaf) => {
+			return new TimelineView(leaf, this.personManager);
+		});
+
+		this.registerView(VIEW_TYPE_PIPELINE, (leaf: WorkspaceLeaf) => {
+			return new PipelineView(leaf, this.personManager);
 		});
 
 		// Register CM6 editor extension for @-mention autocomplete
@@ -56,10 +67,10 @@ export default class ArcadiaConnectPlugin extends Plugin {
 			this.mentionPostProcessor.getProcessor()
 		);
 
-		// Add ribbon icon
-		this.addRibbonIcon('users', 'Open People Panel', () => {
-			this.activatePeopleView();
-		});
+		// Ribbon icons
+		this.addRibbonIcon('users', 'People Panel', () => this.activatePeopleView());
+		this.addRibbonIcon('history', 'Interaction Timeline', () => this.activateView(VIEW_TYPE_TIMELINE));
+		this.addRibbonIcon('kanban-square', 'Deal Pipeline', () => this.activateView(VIEW_TYPE_PIPELINE));
 
 		// Add commands
 		this.addCommand({
@@ -87,7 +98,19 @@ export default class ArcadiaConnectPlugin extends Plugin {
 			},
 		});
 
-		// Add CRM commands
+		// CRM commands
+		this.addCommand({
+			id: 'open-timeline',
+			name: 'Open Interaction Timeline',
+			callback: () => this.activateView(VIEW_TYPE_TIMELINE),
+		});
+
+		this.addCommand({
+			id: 'open-pipeline',
+			name: 'Open Deal Pipeline',
+			callback: () => this.activateView(VIEW_TYPE_PIPELINE),
+		});
+
 		this.addCommand({
 			id: 'log-interaction',
 			name: 'Log Interaction',
@@ -95,6 +118,22 @@ export default class ArcadiaConnectPlugin extends Plugin {
 				new InteractionLoggerModal(this.app, this.personManager, null, () => {
 					this.refreshPeopleView();
 				}).open();
+			},
+		});
+
+		this.addCommand({
+			id: 'ai-suggest-followup',
+			name: 'AI: Suggest Follow-up for Active Contact',
+			checkCallback: (checking) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file) return false;
+				const person = this.personManager.getAllPeople()
+					.find(p => p.file.path === file.path);
+				if (!person) return false;
+				if (!checking) {
+					new AISuggestionModal(this.app, person, this.personManager, this.settings).open();
+				}
+				return true;
 			},
 		});
 
@@ -177,18 +216,18 @@ export default class ArcadiaConnectPlugin extends Plugin {
 	}
 
 	private async activatePeopleView(): Promise<void> {
-		const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_PEOPLE);
+		return this.activateView(VIEW_TYPE_PEOPLE);
+	}
+
+	async activateView(viewType: string): Promise<void> {
+		const existing = this.app.workspace.getLeavesOfType(viewType);
 		if (existing.length > 0) {
 			this.app.workspace.revealLeaf(existing[0]);
 			return;
 		}
-
 		const leaf = this.app.workspace.getRightLeaf(false);
 		if (leaf) {
-			await leaf.setViewState({
-				type: VIEW_TYPE_PEOPLE,
-				active: true,
-			});
+			await leaf.setViewState({ type: viewType, active: true });
 			this.app.workspace.revealLeaf(leaf);
 		}
 	}
