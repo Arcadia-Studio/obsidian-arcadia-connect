@@ -15,11 +15,11 @@ export class PersonManager {
 		this.peopleFolder = folder;
 	}
 
-	async initialize(): Promise<void> {
-		await this.scanPeopleFolder();
+	initialize(): void {
+		this.scanPeopleFolder();
 	}
 
-	async scanPeopleFolder(): Promise<void> {
+	scanPeopleFolder(): void {
 		this.people.clear();
 		const folderPath = normalizePath(this.peopleFolder);
 		const folder = this.app.vault.getAbstractFileByPath(folderPath);

@@ -22,7 +22,7 @@ export class PipelineView extends ItemView {
 		container.addClass('arcadia-pipeline-view');
 
 		const header = container.createDiv({ cls: 'arcadia-pipeline-header' });
-		header.createEl('h4', { text: 'Deal Pipeline' });
+		header.createEl('h4', { text: 'Deal pipeline' });
 
 		const refreshBtn = header.createEl('button', {
 			cls: 'arcadia-pipeline-refresh',

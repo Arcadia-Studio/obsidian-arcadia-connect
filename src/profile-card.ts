@@ -65,7 +65,7 @@ export class ProfileCard {
 		openBtn.addEventListener('click', (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			this.app.workspace.openLinkText(person.file.path, '', false);
+			void this.app.workspace.openLinkText(person.file.path, '', false);
 			this.hide();
 		});
 

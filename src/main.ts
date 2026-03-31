@@ -68,16 +68,16 @@ export default class ArcadiaConnectPlugin extends Plugin {
 		);
 
 		// Ribbon icons
-		this.addRibbonIcon('users', 'People Panel', () => this.activatePeopleView());
-		this.addRibbonIcon('history', 'Interaction Timeline', () => this.activateView(VIEW_TYPE_TIMELINE));
-		this.addRibbonIcon('kanban-square', 'Deal Pipeline', () => this.activateView(VIEW_TYPE_PIPELINE));
+		this.addRibbonIcon('users', 'People Panel', () => { void this.activatePeopleView(); });
+		this.addRibbonIcon('history', 'Interaction Timeline', () => { void this.activateView(VIEW_TYPE_TIMELINE); });
+		this.addRibbonIcon('kanban-square', 'Deal Pipeline', () => { void this.activateView(VIEW_TYPE_PIPELINE); });
 
 		// Add commands
 		this.addCommand({
 			id: 'open-people-panel',
 			name: 'Open People Panel',
 			callback: () => {
-				this.activatePeopleView();
+				void this.activatePeopleView();
 			},
 		});
 
@@ -102,13 +102,13 @@ export default class ArcadiaConnectPlugin extends Plugin {
 		this.addCommand({
 			id: 'open-timeline',
 			name: 'Open Interaction Timeline',
-			callback: () => this.activateView(VIEW_TYPE_TIMELINE),
+			callback: () => { void this.activateView(VIEW_TYPE_TIMELINE); },
 		});
 
 		this.addCommand({
 			id: 'open-pipeline',
 			name: 'Open Deal Pipeline',
-			callback: () => this.activateView(VIEW_TYPE_PIPELINE),
+			callback: () => { void this.activateView(VIEW_TYPE_PIPELINE); },
 		});
 
 		this.addCommand({
@@ -138,9 +138,9 @@ export default class ArcadiaConnectPlugin extends Plugin {
 		});
 
 		// Initialize after layout is ready
-		this.app.workspace.onLayoutReady(async () => {
-			await this.personManager.initialize();
-			await this.mentionScanner.buildIndex();
+		this.app.workspace.onLayoutReady(() => {
+			this.personManager.initialize();
+			void this.mentionScanner.buildIndex();
 			this.followUpEngine.start();
 		});
 
@@ -185,7 +185,7 @@ export default class ArcadiaConnectPlugin extends Plugin {
 					// Re-scan after rename
 					setTimeout(() => {
 						this.personManager.scanPeopleFolder();
-						this.mentionScanner.buildIndex();
+						void this.mentionScanner.buildIndex();
 						this.refreshPeopleView();
 					}, 500);
 				}
@@ -193,7 +193,7 @@ export default class ArcadiaConnectPlugin extends Plugin {
 		);
 	}
 
-	async onunload(): Promise<void> {
+	onunload(): void {
 		this.followUpEngine.stop();
 		this.profileCard.destroy();
 	}
@@ -210,8 +210,8 @@ export default class ArcadiaConnectPlugin extends Plugin {
 		this.mentionScanner.setPeopleFolder(this.settings.peopleFolder);
 
 		// Re-scan with new settings
-		await this.personManager.scanPeopleFolder();
-		await this.mentionScanner.buildIndex();
+		this.personManager.scanPeopleFolder();
+		void this.mentionScanner.buildIndex();
 		this.refreshPeopleView();
 	}
 

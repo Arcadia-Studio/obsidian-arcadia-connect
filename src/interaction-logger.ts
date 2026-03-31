@@ -115,39 +115,41 @@ export class InteractionLoggerModal extends Modal {
 			cls: 'mod-cta',
 		});
 
-		saveBtn.addEventListener('click', async () => {
-			if (!selectedPerson) {
-				new Notice('Please select a person.');
-				return;
-			}
-			if (!summary.trim()) {
-				new Notice('Please add a summary.');
-				return;
-			}
-
-			try {
-				await this.personManager.logInteraction(
-					selectedPerson,
-					INTERACTION_TYPES[selectedType],
-					summary.trim(),
-					selectedDate
-				);
-
-				// Set next follow-up if provided
-				if (nextFollowUp) {
-					await this.app.fileManager.processFrontMatter(selectedPerson.file, (fm) => {
-						fm['next-follow-up'] = nextFollowUp;
-						fm['follow-up-status'] = 'pending';
-					});
+		saveBtn.addEventListener('click', () => {
+			void (async () => {
+				if (!selectedPerson) {
+					new Notice('Please select a person.');
+					return;
+				}
+				if (!summary.trim()) {
+					new Notice('Please add a summary.');
+					return;
 				}
 
-				new Notice(`Logged interaction with ${selectedPerson.name}`);
-				this.close();
-				this.onSuccess?.();
-			} catch (e) {
-				new Notice('Failed to log interaction. Check console for details.');
-				console.error('Interaction log error:', e);
-			}
+				try {
+					await this.personManager.logInteraction(
+						selectedPerson,
+						INTERACTION_TYPES[selectedType],
+						summary.trim(),
+						selectedDate
+					);
+
+					// Set next follow-up if provided
+					if (nextFollowUp) {
+						await this.app.fileManager.processFrontMatter(selectedPerson.file, (fm) => {
+							fm['next-follow-up'] = nextFollowUp;
+							fm['follow-up-status'] = 'pending';
+						});
+					}
+
+					new Notice(`Logged interaction with ${selectedPerson.name}`);
+					this.close();
+					this.onSuccess?.();
+				} catch (e) {
+					new Notice('Failed to log interaction. Check console for details.');
+					console.error('Interaction log error:', e);
+				}
+			})();
 		});
 	}
 
@@ -209,23 +211,25 @@ export class SetFollowUpModal extends Modal {
 		cancelBtn.addEventListener('click', () => this.close());
 
 		const saveBtn = buttonRow.createEl('button', { text: 'Set Follow-up', cls: 'mod-cta' });
-		saveBtn.addEventListener('click', async () => {
-			if (!followUpDate) {
-				new Notice('Please select a date.');
-				return;
-			}
-
-			await this.app.fileManager.processFrontMatter(this.person.file, (fm) => {
-				fm['next-follow-up'] = followUpDate;
-				fm['follow-up-status'] = 'pending';
-				if (notes.trim()) {
-					fm['follow-up-note'] = notes.trim();
+		saveBtn.addEventListener('click', () => {
+			void (async () => {
+				if (!followUpDate) {
+					new Notice('Please select a date.');
+					return;
 				}
-			});
 
-			new Notice(`Follow-up set for ${this.person.name} on ${followUpDate}`);
-			this.close();
-			this.onSuccess?.();
+				await this.app.fileManager.processFrontMatter(this.person.file, (fm) => {
+					fm['next-follow-up'] = followUpDate;
+					fm['follow-up-status'] = 'pending';
+					if (notes.trim()) {
+						fm['follow-up-note'] = notes.trim();
+					}
+				});
+
+				new Notice(`Follow-up set for ${this.person.name} on ${followUpDate}`);
+				this.close();
+				this.onSuccess?.();
+			})();
 		});
 	}
 

@@ -1,4 +1,4 @@
-import { App, TFile, CachedMetadata, normalizePath } from 'obsidian';
+import { App, TFile, normalizePath } from 'obsidian';
 import { MentionInstance } from './types';
 
 export class MentionScanner {
@@ -22,11 +22,11 @@ export class MentionScanner {
 		for (const file of files) {
 			// Skip files in the people folder itself
 			if (this.isInPeopleFolder(file)) continue;
-			await this.scanFile(file);
+			this.scanFile(file);
 		}
 	}
 
-	async scanFile(file: TFile): Promise<void> {
+	scanFile(file: TFile): void {
 		// Remove existing mentions from this file
 		this.removeFileFromIndex(file);
 

@@ -54,7 +54,7 @@ export class TimelineView extends ItemView {
 			text: '↻',
 			attr: { title: 'Refresh' },
 		});
-		refreshBtn.addEventListener('click', () => this.reload());
+		refreshBtn.addEventListener('click', () => { void this.reload(); });
 
 		this.listEl = container.createDiv({ cls: 'arcadia-timeline-list' });
 		await this.reload();

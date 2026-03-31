@@ -1,7 +1,7 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import type ArcadiaConnectPlugin from './main';
 import { ArcadiaConnectSettings } from './types';
-import { validateLicense, isCacheValid } from './license';
+import { validateLicense } from './license';
 
 export class ArcadiaConnectSettingTab extends PluginSettingTab {
 	plugin: ArcadiaConnectPlugin;
@@ -15,7 +15,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		containerEl.createEl('h2', { text: 'Arcadia Connect Settings' });
+		new Setting(containerEl).setName('Arcadia Connect settings').setHeading();
 
 		new Setting(containerEl)
 			.setName('People folder')
@@ -59,7 +59,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		containerEl.createEl('h3', { text: 'License' });
+		new Setting(containerEl).setName('License').setHeading();
 
 		const licenseStatus = this.plugin.settings.licenseStatus;
 		const isPro = this.plugin.settings.isPro && licenseStatus?.valid;
@@ -72,8 +72,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 			cls: isPro ? 'mod-success' : 'mod-warning',
 		});
 
-		let keyInputEl: HTMLInputElement | null = null;
-
+		let keyInputEl: HTMLInputElement;
 		new Setting(containerEl)
 			.setName('License key')
 			.setDesc('Enter your Arcadia Connect Premium license key from Lemon Squeezy.')
@@ -118,7 +117,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 			);
 
 		// ----- AI Enrichment -----
-		containerEl.createEl('h3', { text: 'AI Enrichment (BYOK)' });
+		new Setting(containerEl).setName('AI enrichment (BYOK)').setHeading();
 		containerEl.createEl('p', {
 			text: 'Bring your own API key to unlock AI-powered follow-up suggestions. Keys are stored locally in your vault settings and never sent to Arcadia servers.',
 			cls: 'setting-item-description',

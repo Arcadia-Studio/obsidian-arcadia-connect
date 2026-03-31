@@ -1,12 +1,21 @@
 import { App, Modal, Setting } from 'obsidian';
-import { validateLicense } from './license';
+import { validateLicense, LicenseStatus } from './license';
+
+interface PremiumPlugin {
+	settings: {
+		licenseKey: string;
+		licenseStatus: LicenseStatus | null;
+		isPro: boolean;
+	};
+	saveSettings(): Promise<void>;
+}
 
 export class PremiumModal extends Modal {
-	private plugin: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+	private plugin: PremiumPlugin;
 	private featureName: string;
 	private textInputEl: HTMLInputElement | null = null;
 
-	constructor(app: App, plugin: any, featureName: string) { // eslint-disable-line @typescript-eslint/no-explicit-any
+	constructor(app: App, plugin: PremiumPlugin, featureName: string) {
 		super(app);
 		this.plugin = plugin;
 		this.featureName = featureName;
@@ -14,7 +23,7 @@ export class PremiumModal extends Modal {
 
 	onOpen() {
 		const { contentEl } = this;
-		contentEl.createEl('h2', { text: 'Arcadia Connect Premium' });
+		contentEl.createEl('h2', { text: 'Arcadia Connect premium' });
 		contentEl.createEl('p', {
 			text: `"${this.featureName}" is part of Arcadia Connect Premium.`,
 		});
@@ -23,8 +32,8 @@ export class PremiumModal extends Modal {
 			cls: 'setting-item-description',
 		});
 
-		const keyInputSetting = new Setting(contentEl)
-			.setName('License Key')
+		new Setting(contentEl)
+			.setName('License key')
 			.setDesc('Enter your license key from Lemon Squeezy')
 			.addText(text => {
 				this.textInputEl = text.inputEl;
@@ -46,7 +55,7 @@ export class PremiumModal extends Modal {
 
 		new Setting(contentEl)
 			.addButton(btn => btn
-				.setButtonText('Get Premium')
+				.setButtonText('Get premium')
 				.setCta()
 				.onClick(() => {
 					window.open('https://arcadia-studio.lemonsqueezy.com', '_blank');

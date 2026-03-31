@@ -100,7 +100,7 @@ export class PeopleView extends ItemView {
 			text: '+ Person',
 		});
 		newBtn.addEventListener('click', () => {
-			this.createNewPerson();
+			void this.createNewPerson();
 		});
 
 		// Log interaction button
@@ -301,7 +301,7 @@ export class PeopleView extends ItemView {
 		if (!name) return;
 
 		const file = await this.personManager.createPersonNote(name);
-		this.app.workspace.openLinkText(file.path, '', false);
+		await this.app.workspace.openLinkText(file.path, '', false);
 		this.renderList();
 	}
 

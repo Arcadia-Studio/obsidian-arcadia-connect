@@ -67,7 +67,7 @@ async function callOpenAI(apiKey: string, model: string, prompt: string): Promis
 	return data.choices?.[0]?.message?.content ?? '';
 }
 
-async function parseAISuggestion(raw: string): Promise<AISuggestion> {
+function parseAISuggestion(raw: string): AISuggestion {
 	// Try to parse JSON block from response
 	const jsonMatch = raw.match(/```json\n?([\s\S]+?)\n?```/) ??
 		raw.match(/\{[\s\S]*"action"[\s\S]*\}/);
@@ -197,13 +197,15 @@ export class AISuggestionModal extends Modal {
 				text: 'Append to note',
 				cls: 'mod-cta',
 			});
-			appendBtn.addEventListener('click', async () => {
-				const noteContent = await this.app.vault.read(this.person.file);
-				const today = new Date().toISOString().split('T')[0];
-				const entry = `\n---\n**AI Suggestion** (${today})\n${suggestion.action}${suggestion.suggestedMessage ? '\n\n*Draft:* ' + suggestion.suggestedMessage : ''}\n`;
-				await this.app.vault.modify(this.person.file, noteContent + entry);
-				new Notice('Suggestion appended to note.');
-				this.close();
+			appendBtn.addEventListener('click', () => {
+				void (async () => {
+					const noteContent = await this.app.vault.read(this.person.file);
+					const today = new Date().toISOString().split('T')[0];
+					const entry = `\n---\n**AI Suggestion** (${today})\n${suggestion.action}${suggestion.suggestedMessage ? '\n\n*Draft:* ' + suggestion.suggestedMessage : ''}\n`;
+					await this.app.vault.modify(this.person.file, noteContent + entry);
+					new Notice('Suggestion appended to note.');
+					this.close();
+				})();
 			});
 
 			const closeBtn = buttons.createEl('button', { text: 'Dismiss' });

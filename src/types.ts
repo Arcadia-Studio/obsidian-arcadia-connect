@@ -48,7 +48,7 @@ export type RelationshipType =
 	| 'vendor'
 	| 'personal'
 	| 'colleague'
-	| string;
+	| (string & Record<never, never>);
 
 export type InteractionType = 'call' | 'email' | 'meeting' | 'note' | 'other';
 

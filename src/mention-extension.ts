@@ -1,5 +1,4 @@
 import { EditorView } from '@codemirror/view';
-import { EditorState } from '@codemirror/state';
 import {
 	CompletionContext,
 	CompletionResult,
@@ -40,7 +39,7 @@ function mentionCompletionSource(
 	for (let i = cursorInLine - 1; i >= 0; i--) {
 		if (lineText[i] === trigger) {
 			// Check it's at word boundary (start of line or preceded by whitespace/punctuation)
-			if (i === 0 || /[\s\(\[\{,;:!?]/.test(lineText[i - 1])) {
+			if (i === 0 || /[\s([{,;:!?]/.test(lineText[i - 1])) {
 				triggerPos = i;
 			}
 			break;
@@ -104,7 +103,7 @@ function mentionCompletionSource(
 						annotations: pickedCompletion.of(completion),
 					});
 					// Create the person note asynchronously
-					personManager.createPersonNote(name);
+					void personManager.createPersonNote(name);
 				},
 			});
 		}
