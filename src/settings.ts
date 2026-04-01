@@ -62,8 +62,8 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 		const licenseStatus = this.plugin.settings.licenseStatus;
 		const isPro = this.plugin.settings.isPro && licenseStatus?.valid;
 		const statusDesc = isPro
-			? `Active${licenseStatus?.customerEmail ? ` (${licenseStatus.customerEmail})` : ''}${licenseStatus?.expiresAt ? ` - expires ${licenseStatus.expiresAt}` : ''}`
-			: 'No active license. Enter your license key and click Validate.';
+			? `active${licenseStatus?.customerEmail ? ` (${licenseStatus.customerEmail})` : ''}${licenseStatus?.expiresAt ? ` - expires ${licenseStatus.expiresAt}` : ''}`
+			: 'No active license. Enter your license key and click validate.';
 
 		const licenseStatusEl = containerEl.createEl('p', {
 			text: `License status: ${statusDesc}`,
@@ -75,7 +75,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 			.setDesc('Enter your license key to activate premium features.')
 			.addText(text => {
 				text
-					.setPlaceholder('xxxx-xxxx-xxxx-xxxx')
+					.setPlaceholder('Xxxx-xxxx-xxxx-xxxx')
 					.setValue(this.plugin.settings.licenseKey)
 					.onChange(async (value) => {
 						this.plugin.settings.licenseKey = value.trim();
@@ -95,7 +95,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					btn.setButtonText('Validate').setDisabled(false);
 					if (status.valid) {
-						licenseStatusEl.textContent = `License status: Active${status.customerEmail ? ` (${status.customerEmail})` : ''}`;
+						licenseStatusEl.textContent = `License status: active${status.customerEmail ? ` (${status.customerEmail})` : ''}`;
 						licenseStatusEl.className = 'mod-success';
 					} else {
 						licenseStatusEl.textContent = 'License status: invalid or expired. Check your key and try again.';
@@ -135,9 +135,9 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 		if (this.plugin.settings.aiProvider === 'anthropic') {
 			new Setting(containerEl)
 				.setName('API key')
-				.setDesc('Your key from console.anthropic.com')
+				.setDesc('Your Anthropic API key')
 				.addText(text => text
-					.setPlaceholder('sk-ant-...')
+					.setPlaceholder('Sk-ant-...')
 					.setValue(this.plugin.settings.anthropicApiKey)
 					.onChange(async (value) => {
 						this.plugin.settings.anthropicApiKey = value.trim();
@@ -147,9 +147,9 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 		} else {
 			new Setting(containerEl)
 				.setName('API key')
-				.setDesc('Your key from platform.openai.com')
+				.setDesc('Your OpenAI API key')
 				.addText(text => text
-					.setPlaceholder('sk-...')
+					.setPlaceholder('Sk-...')
 					.setValue(this.plugin.settings.openaiApiKey)
 					.onChange(async (value) => {
 						this.plugin.settings.openaiApiKey = value.trim();
@@ -160,9 +160,9 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 			new Setting(containerEl)
 				.setName('Model')
 				.addDropdown(dd => dd
-					.addOption('gpt-4o-mini', 'gpt-4o-mini (fast, cheap)')
-					.addOption('gpt-4o', 'gpt-4o (best quality)')
-					.addOption('gpt-4-turbo', 'gpt-4-turbo')
+					.addOption('gpt-4o-mini', 'Gpt-4o-mini (fast, cheap)')
+					.addOption('gpt-4o', 'Gpt-4o (best quality)')
+					.addOption('gpt-4-turbo', 'Gpt-4-turbo')
 					.setValue(this.plugin.settings.openaiModel)
 					.onChange(async (value) => {
 						this.plugin.settings.openaiModel = value;

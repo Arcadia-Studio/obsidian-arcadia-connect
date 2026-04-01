@@ -23,12 +23,12 @@ export class PremiumModal extends Modal {
 
 	onOpen() {
 		const { contentEl } = this;
-		contentEl.createEl('h2', { text: 'Premium features' });
+		contentEl.createEl('h2', { text: 'Premium feature' });
 		contentEl.createEl('p', {
-			text: `"${this.featureName}" is part of Arcadia Connect Premium.`,
+			text: `"${this.featureName}" is part of Arcadia Connect premium.`,
 		});
 		contentEl.createEl('p', {
-			text: 'Purchase a license to unlock all premium features, or enter your existing license key below.',
+			text: 'Enter a license key to unlock all premium features, or purchase one below.',
 			cls: 'setting-item-description',
 		});
 
@@ -38,7 +38,7 @@ export class PremiumModal extends Modal {
 			.addText(text => {
 				this.textInputEl = text.inputEl;
 				text
-					.setPlaceholder('xxxx-xxxx-xxxx-xxxx')
+					.setPlaceholder('Xxxx-xxxx-xxxx-xxxx')
 					.onChange((value) => {
 						if (value.trim().length > 10) {
 							void (async () => {
