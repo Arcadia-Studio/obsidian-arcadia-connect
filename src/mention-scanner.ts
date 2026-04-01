@@ -15,7 +15,7 @@ export class MentionScanner {
 		this.peopleFolder = folder;
 	}
 
-	async buildIndex(): Promise<void> {
+	buildIndex(): void {
 		this.mentionIndex.clear();
 		const files = this.app.vault.getMarkdownFiles();
 

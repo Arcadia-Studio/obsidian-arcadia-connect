@@ -39,16 +39,18 @@ export class PremiumModal extends Modal {
 				this.textInputEl = text.inputEl;
 				text
 					.setPlaceholder('XXXX-XXXX-XXXX-XXXX')
-					.onChange(async (value) => {
+					.onChange((value) => {
 						if (value.trim().length > 10) {
-							const status = await validateLicense(value.trim());
-							if (status.valid) {
-								this.plugin.settings.licenseKey = value.trim();
-								this.plugin.settings.licenseStatus = status;
-								this.plugin.settings.isPro = true;
-								await this.plugin.saveSettings();
-								this.close();
-							}
+							void (async () => {
+								const status = await validateLicense(value.trim());
+								if (status.valid) {
+									this.plugin.settings.licenseKey = value.trim();
+									this.plugin.settings.licenseStatus = status;
+									this.plugin.settings.isPro = true;
+									await this.plugin.saveSettings();
+									this.close();
+								}
+							})();
 						}
 					});
 			});

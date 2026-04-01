@@ -3,7 +3,6 @@ import { PersonManager } from './person-manager';
 import { PersonNote } from './types';
 
 const CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check every hour
-const FIRED_KEY = 'arcadia-connect-followup-fired';
 
 export class FollowUpEngine {
 	private personManager: PersonManager;

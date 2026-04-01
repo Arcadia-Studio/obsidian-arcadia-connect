@@ -16,7 +16,7 @@ export class PipelineView extends ItemView {
 	getDisplayText(): string { return 'Pipeline'; }
 	getIcon(): string { return 'kanban-square'; }
 
-	async onOpen(): Promise<void> {
+	onOpen(): void {
 		const container = this.containerEl.children[1] as HTMLElement;
 		container.empty();
 		container.addClass('arcadia-pipeline-view');
@@ -135,15 +135,17 @@ export class PipelineView extends ItemView {
 					if (s === stage) continue;
 					moveSelect.createEl('option', { value: s, text: DEAL_STAGE_LABELS[s] });
 				}
-				moveSelect.addEventListener('change', async () => {
-					const newStage = moveSelect.value as DealStage;
-					if (!newStage) return;
-					await this.app.fileManager.processFrontMatter(person.file, (fm) => {
-						fm['deal-stage'] = newStage;
-					});
-					this.personManager.updatePerson(person.file);
-					new Notice(`Moved ${person.name} to ${DEAL_STAGE_LABELS[newStage]}`);
-					this.renderBoard();
+				moveSelect.addEventListener('change', () => {
+					void (async () => {
+						const newStage = moveSelect.value as DealStage;
+						if (!newStage) return;
+						await this.app.fileManager.processFrontMatter(person.file, (fm) => {
+							fm['deal-stage'] = newStage;
+						});
+						this.personManager.updatePerson(person.file);
+						new Notice(`Moved ${person.name} to ${DEAL_STAGE_LABELS[newStage]}`);
+						this.renderBoard();
+					})();
 				});
 
 				// Log interaction button
@@ -162,13 +164,13 @@ export class PipelineView extends ItemView {
 				// Click card to open note
 				card.addEventListener('click', (e) => {
 					if ((e.target as HTMLElement).closest('select, button')) return;
-					this.app.workspace.openLinkText(person.file.path, '', false);
+					void this.app.workspace.openLinkText(person.file.path, '', false);
 				});
 			}
 		}
 	}
 
-	async onClose(): Promise<void> {
+	onClose(): void {
 		// nothing
 	}
 }

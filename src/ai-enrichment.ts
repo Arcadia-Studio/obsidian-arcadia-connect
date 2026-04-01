@@ -95,7 +95,7 @@ export async function getSuggestedFollowUp(
 	const hasOpenAI = settings.aiProvider === 'openai' && settings.openaiApiKey;
 
 	if (!hasAnthropic && !hasOpenAI) {
-		throw new Error('No AI API key configured. Add one in Settings > Arcadia Connect > AI Enrichment.');
+		throw new Error('No AI API key configured. Add one in Settings > Arcadia Connect > AI enrichment.');
 	}
 
 	const history = extractInteractionHistory(personContent);
@@ -160,7 +160,7 @@ export class AISuggestionModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass('arcadia-ai-modal');
 
-		contentEl.createEl('h3', { text: `AI Suggestion: ${this.person.name}` });
+		contentEl.createEl('h3', { text: `AI suggestion: ${this.person.name}` });
 
 		const loadingEl = contentEl.createDiv({ cls: 'arcadia-ai-loading', text: 'Analyzing interaction history...' });
 
@@ -201,7 +201,7 @@ export class AISuggestionModal extends Modal {
 				void (async () => {
 					const noteContent = await this.app.vault.read(this.person.file);
 					const today = new Date().toISOString().split('T')[0];
-					const entry = `\n---\n**AI Suggestion** (${today})\n${suggestion.action}${suggestion.suggestedMessage ? '\n\n*Draft:* ' + suggestion.suggestedMessage : ''}\n`;
+					const entry = `\n---\n**AI suggestion** (${today})\n${suggestion.action}${suggestion.suggestedMessage ? '\n\n*Draft:* ' + suggestion.suggestedMessage : ''}\n`;
 					await this.app.vault.modify(this.person.file, noteContent + entry);
 					new Notice('Suggestion appended to note.');
 					this.close();

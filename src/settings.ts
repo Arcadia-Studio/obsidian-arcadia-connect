@@ -15,7 +15,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		new Setting(containerEl).setName('Arcadia Connect settings').setHeading();
+		new Setting(containerEl).setName('General').setHeading();
 
 		new Setting(containerEl)
 			.setName('People folder')
@@ -72,12 +72,10 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 			cls: isPro ? 'mod-success' : 'mod-warning',
 		});
 
-		let keyInputEl: HTMLInputElement;
 		new Setting(containerEl)
 			.setName('License key')
 			.setDesc('Enter your Arcadia Connect Premium license key from Lemon Squeezy.')
 			.addText(text => {
-				keyInputEl = text.inputEl;
 				text
 					.setPlaceholder('XXXX-XXXX-XXXX-XXXX')
 					.setValue(this.plugin.settings.licenseKey)
@@ -110,7 +108,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.addButton(btn => btn
-				.setButtonText('Get Arcadia Connect Premium')
+				.setButtonText('Get premium')
 				.onClick(() => {
 					window.open('https://arcadia-studio.lemonsqueezy.com', '_blank');
 				})

@@ -68,14 +68,14 @@ export default class ArcadiaConnectPlugin extends Plugin {
 		);
 
 		// Ribbon icons
-		this.addRibbonIcon('users', 'People Panel', () => { void this.activatePeopleView(); });
-		this.addRibbonIcon('history', 'Interaction Timeline', () => { void this.activateView(VIEW_TYPE_TIMELINE); });
-		this.addRibbonIcon('kanban-square', 'Deal Pipeline', () => { void this.activateView(VIEW_TYPE_PIPELINE); });
+		this.addRibbonIcon('users', 'People panel', () => { void this.activatePeopleView(); });
+		this.addRibbonIcon('history', 'Interaction timeline', () => { void this.activateView(VIEW_TYPE_TIMELINE); });
+		this.addRibbonIcon('kanban-square', 'Deal pipeline', () => { void this.activateView(VIEW_TYPE_PIPELINE); });
 
 		// Add commands
 		this.addCommand({
 			id: 'open-people-panel',
-			name: 'Open People Panel',
+			name: 'Open people panel',
 			callback: () => {
 				void this.activatePeopleView();
 			},
@@ -83,7 +83,7 @@ export default class ArcadiaConnectPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'create-person-note',
-			name: 'Create Person Note',
+			name: 'Create person note',
 			callback: async () => {
 				await this.createPersonNoteCommand();
 			},
@@ -91,7 +91,7 @@ export default class ArcadiaConnectPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'mention-person',
-			name: 'Mention Person',
+			name: 'Mention person',
 			editorCallback: (editor) => {
 				// Insert @ trigger to activate autocomplete
 				editor.replaceSelection(this.settings.triggerChar || '@');
@@ -101,19 +101,19 @@ export default class ArcadiaConnectPlugin extends Plugin {
 		// CRM commands
 		this.addCommand({
 			id: 'open-timeline',
-			name: 'Open Interaction Timeline',
+			name: 'Open interaction timeline',
 			callback: () => { void this.activateView(VIEW_TYPE_TIMELINE); },
 		});
 
 		this.addCommand({
 			id: 'open-pipeline',
-			name: 'Open Deal Pipeline',
+			name: 'Open deal pipeline',
 			callback: () => { void this.activateView(VIEW_TYPE_PIPELINE); },
 		});
 
 		this.addCommand({
 			id: 'log-interaction',
-			name: 'Log Interaction',
+			name: 'Log interaction',
 			callback: () => {
 				new InteractionLoggerModal(this.app, this.personManager, null, () => {
 					this.refreshPeopleView();
@@ -123,7 +123,7 @@ export default class ArcadiaConnectPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'ai-suggest-followup',
-			name: 'AI: Suggest Follow-up for Active Contact',
+			name: 'AI: Suggest follow-up for active contact',
 			checkCallback: (checking) => {
 				const file = this.app.workspace.getActiveFile();
 				if (!file) return false;
@@ -268,7 +268,7 @@ export default class ArcadiaConnectPlugin extends Plugin {
 			const input = document.createElement('input');
 			input.type = 'text';
 			input.className = 'arcadia-connect-modal-input';
-			input.placeholder = 'Full Name';
+			input.placeholder = 'Full name';
 			content.appendChild(input);
 
 			const buttons = document.createElement('div');

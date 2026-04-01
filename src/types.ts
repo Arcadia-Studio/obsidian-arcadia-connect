@@ -132,8 +132,8 @@ export const DEAL_STAGE_LABELS: Record<DealStage, string> = {
 	prospect: 'Prospect',
 	proposal: 'Proposal',
 	negotiation: 'Negotiation',
-	'closed-won': 'Closed Won',
-	'closed-lost': 'Closed Lost',
+	'closed-won': 'Closed won',
+	'closed-lost': 'Closed lost',
 	nurture: 'Nurture',
 };
 

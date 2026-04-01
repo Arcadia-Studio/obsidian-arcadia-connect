@@ -85,8 +85,8 @@ var DEAL_STAGE_LABELS = {
   prospect: "Prospect",
   proposal: "Proposal",
   negotiation: "Negotiation",
-  "closed-won": "Closed Won",
-  "closed-lost": "Closed Lost",
+  "closed-won": "Closed won",
+  "closed-lost": "Closed lost",
   nurture: "Nurture"
 };
 var DEAL_STAGE_ORDER = [
@@ -142,7 +142,7 @@ var ArcadiaConnectSettingTab = class extends import_obsidian2.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian2.Setting(containerEl).setName("Arcadia Connect settings").setHeading();
+    new import_obsidian2.Setting(containerEl).setName("General").setHeading();
     new import_obsidian2.Setting(containerEl).setName("People folder").setDesc("Folder where person notes are stored (relative to vault root).").addText((text) => text.setPlaceholder("People/").setValue(this.plugin.settings.peopleFolder).onChange(async (value) => {
       this.plugin.settings.peopleFolder = value;
       await this.plugin.saveSettings();
@@ -167,9 +167,7 @@ var ArcadiaConnectSettingTab = class extends import_obsidian2.PluginSettingTab {
       text: `License status: ${statusDesc}`,
       cls: isPro ? "mod-success" : "mod-warning"
     });
-    let keyInputEl;
     new import_obsidian2.Setting(containerEl).setName("License key").setDesc("Enter your Arcadia Connect Premium license key from Lemon Squeezy.").addText((text) => {
-      keyInputEl = text.inputEl;
       text.setPlaceholder("XXXX-XXXX-XXXX-XXXX").setValue(this.plugin.settings.licenseKey).onChange(async (value) => {
         this.plugin.settings.licenseKey = value.trim();
         await this.plugin.saveSettings();
@@ -195,7 +193,7 @@ var ArcadiaConnectSettingTab = class extends import_obsidian2.PluginSettingTab {
       })
     );
     new import_obsidian2.Setting(containerEl).addButton(
-      (btn) => btn.setButtonText("Get Arcadia Connect Premium").onClick(() => {
+      (btn) => btn.setButtonText("Get premium").onClick(() => {
         window.open("https://arcadia-studio.lemonsqueezy.com", "_blank");
       })
     );
@@ -440,7 +438,7 @@ var MentionScanner = class {
   setPeopleFolder(folder) {
     this.peopleFolder = folder;
   }
-  async buildIndex() {
+  buildIndex() {
     this.mentionIndex.clear();
     const files = this.app.vault.getMarkdownFiles();
     for (const file of files) {
@@ -630,7 +628,7 @@ var MentionPostProcessor = class {
         e.preventDefault();
         const person = this.personManager.getPersonByName(m.name);
         if (person) {
-          this.app.workspace.openLinkText(person.file.path, "", false);
+          void this.app.workspace.openLinkText(person.file.path, "", false);
         }
       });
       if (this.settings.showHoverCard) {
@@ -770,7 +768,7 @@ var InteractionLoggerModal = class extends import_obsidian5.Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("arcadia-interaction-modal");
-    contentEl.createEl("h2", { text: "Log Interaction" });
+    contentEl.createEl("h2", { text: "Log interaction" });
     const today = new Date().toISOString().split("T")[0];
     let selectedPerson = this.preselectedPerson;
     let selectedType = "call";
@@ -780,7 +778,7 @@ var InteractionLoggerModal = class extends import_obsidian5.Modal {
     if (!this.preselectedPerson) {
       const people = this.personManager.getAllPeople();
       new import_obsidian5.Setting(contentEl).setName("Person").setDesc("Who did you interact with?").addDropdown((dd) => {
-        dd.addOption("", "\u2014 Select person \u2014");
+        dd.addOption("", "\u2014 Select a person \u2014");
         for (const p of people.sort((a, b) => a.name.localeCompare(b.name))) {
           dd.addOption(p.name, p.name);
         }
@@ -828,7 +826,7 @@ var InteractionLoggerModal = class extends import_obsidian5.Modal {
     const cancelBtn = buttonRow.createEl("button", { text: "Cancel" });
     cancelBtn.addEventListener("click", () => this.close());
     const saveBtn = buttonRow.createEl("button", {
-      text: "Log Interaction",
+      text: "Log interaction",
       cls: "mod-cta"
     });
     saveBtn.addEventListener("click", () => {
@@ -902,7 +900,7 @@ var SetFollowUpModal = class extends import_obsidian5.Modal {
     const buttonRow = contentEl.createDiv({ cls: "arcadia-interaction-buttons" });
     const cancelBtn = buttonRow.createEl("button", { text: "Cancel" });
     cancelBtn.addEventListener("click", () => this.close());
-    const saveBtn = buttonRow.createEl("button", { text: "Set Follow-up", cls: "mod-cta" });
+    const saveBtn = buttonRow.createEl("button", { text: "Set follow-up", cls: "mod-cta" });
     saveBtn.addEventListener("click", () => {
       void (async () => {
         var _a;
@@ -949,7 +947,7 @@ var PeopleView = class extends import_obsidian6.ItemView {
   getIcon() {
     return "users";
   }
-  async onOpen() {
+  onOpen() {
     const container = this.containerEl.children[1];
     container.empty();
     container.addClass("arcadia-connect-people-view");
@@ -1104,7 +1102,7 @@ var PeopleView = class extends import_obsidian6.ItemView {
         }).open();
       });
       item.addEventListener("click", () => {
-        this.app.workspace.openLinkText(person.file.path, "", false);
+        void this.app.workspace.openLinkText(person.file.path, "", false);
       });
       item.addEventListener("mouseenter", () => {
         this.profileCard.show(person, item);
@@ -1179,7 +1177,7 @@ var PeopleView = class extends import_obsidian6.ItemView {
       const input = document.createElement("input");
       input.type = "text";
       input.className = "arcadia-connect-modal-input";
-      input.placeholder = "Full Name";
+      input.placeholder = "Full name";
       content.appendChild(input);
       const buttons = document.createElement("div");
       buttons.className = "arcadia-connect-modal-buttons";
@@ -1221,7 +1219,7 @@ var PeopleView = class extends import_obsidian6.ItemView {
       input.focus();
     });
   }
-  async onClose() {
+  onClose() {
     this.profileCard.hide();
   }
 };
@@ -1241,7 +1239,7 @@ var TimelineView = class extends import_obsidian7.ItemView {
     return VIEW_TYPE_TIMELINE;
   }
   getDisplayText() {
-    return "Interaction Timeline";
+    return "Interaction timeline";
   }
   getIcon() {
     return "history";
@@ -1251,7 +1249,7 @@ var TimelineView = class extends import_obsidian7.ItemView {
     container.empty();
     container.addClass("arcadia-timeline-view");
     const header = container.createDiv({ cls: "arcadia-timeline-header" });
-    header.createEl("h4", { text: "Interaction Timeline" });
+    header.createEl("h4", { text: "Interaction timeline" });
     const controls = header.createDiv({ cls: "arcadia-timeline-controls" });
     const filterInput = controls.createEl("input", {
       cls: "arcadia-timeline-filter",
@@ -1316,7 +1314,7 @@ var TimelineView = class extends import_obsidian7.ItemView {
     }
     if (filtered.length === 0) {
       const empty = this.listEl.createDiv({ cls: "arcadia-timeline-empty" });
-      empty.textContent = this.filterContact ? "No interactions found for that contact." : 'No interactions logged yet. Use "Log Interaction" to get started.';
+      empty.textContent = this.filterContact ? "No interactions found for that contact." : 'No interactions logged yet. Use "Log interaction" to get started.';
       return;
     }
     const today = new Date().toISOString().split("T")[0];
@@ -1329,9 +1327,9 @@ var TimelineView = class extends import_obsidian7.ItemView {
       if (date === yesterday)
         return "Yesterday";
       if (date >= weekAgo)
-        return "This Week";
+        return "This week";
       if (date >= monthAgo)
-        return "This Month";
+        return "This month";
       return "Earlier";
     };
     let currentBucket = "";
@@ -1355,7 +1353,7 @@ var TimelineView = class extends import_obsidian7.ItemView {
       });
       contactLink.addEventListener("click", (e) => {
         e.preventDefault();
-        this.app.workspace.openLinkText(entry.contactFile.path, "", false);
+        void this.app.workspace.openLinkText(entry.contactFile.path, "", false);
       });
       body.createDiv({
         cls: "arcadia-timeline-summary",
@@ -1363,7 +1361,7 @@ var TimelineView = class extends import_obsidian7.ItemView {
       });
     }
   }
-  async onClose() {
+  onClose() {
   }
 };
 
@@ -1384,7 +1382,7 @@ var PipelineView = class extends import_obsidian8.ItemView {
   getIcon() {
     return "kanban-square";
   }
-  async onOpen() {
+  onOpen() {
     const container = this.containerEl.children[1];
     container.empty();
     container.addClass("arcadia-pipeline-view");
@@ -1478,16 +1476,18 @@ var PipelineView = class extends import_obsidian8.ItemView {
             continue;
           moveSelect.createEl("option", { value: s, text: DEAL_STAGE_LABELS[s] });
         }
-        moveSelect.addEventListener("change", async () => {
-          const newStage = moveSelect.value;
-          if (!newStage)
-            return;
-          await this.app.fileManager.processFrontMatter(person.file, (fm) => {
-            fm["deal-stage"] = newStage;
-          });
-          this.personManager.updatePerson(person.file);
-          new import_obsidian8.Notice(`Moved ${person.name} to ${DEAL_STAGE_LABELS[newStage]}`);
-          this.renderBoard();
+        moveSelect.addEventListener("change", () => {
+          void (async () => {
+            const newStage = moveSelect.value;
+            if (!newStage)
+              return;
+            await this.app.fileManager.processFrontMatter(person.file, (fm) => {
+              fm["deal-stage"] = newStage;
+            });
+            this.personManager.updatePerson(person.file);
+            new import_obsidian8.Notice(`Moved ${person.name} to ${DEAL_STAGE_LABELS[newStage]}`);
+            this.renderBoard();
+          })();
         });
         const logBtn = actions.createEl("button", {
           cls: "arcadia-card-log-btn",
@@ -1503,12 +1503,12 @@ var PipelineView = class extends import_obsidian8.ItemView {
         card.addEventListener("click", (e) => {
           if (e.target.closest("select, button"))
             return;
-          this.app.workspace.openLinkText(person.file.path, "", false);
+          void this.app.workspace.openLinkText(person.file.path, "", false);
         });
       }
     }
   }
-  async onClose() {
+  onClose() {
   }
 };
 
@@ -1736,7 +1736,7 @@ async function getSuggestedFollowUp(person, personContent, settings) {
   const hasAnthropic = settings.aiProvider === "anthropic" && settings.anthropicApiKey;
   const hasOpenAI = settings.aiProvider === "openai" && settings.openaiApiKey;
   if (!hasAnthropic && !hasOpenAI) {
-    throw new Error("No AI API key configured. Add one in Settings > Arcadia Connect > AI Enrichment.");
+    throw new Error("No AI API key configured. Add one in Settings > Arcadia Connect > AI enrichment.");
   }
   const history = extractInteractionHistory(personContent);
   const contextLines = [
@@ -1785,7 +1785,7 @@ var AISuggestionModal = class extends import_obsidian10.Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("arcadia-ai-modal");
-    contentEl.createEl("h3", { text: `AI Suggestion: ${this.person.name}` });
+    contentEl.createEl("h3", { text: `AI suggestion: ${this.person.name}` });
     const loadingEl = contentEl.createDiv({ cls: "arcadia-ai-loading", text: "Analyzing interaction history..." });
     try {
       const content = await this.app.vault.read(this.person.file);
@@ -1819,7 +1819,7 @@ var AISuggestionModal = class extends import_obsidian10.Modal {
           const today = new Date().toISOString().split("T")[0];
           const entry = `
 ---
-**AI Suggestion** (${today})
+**AI suggestion** (${today})
 ${suggestion.action}${suggestion.suggestedMessage ? "\n\n*Draft:* " + suggestion.suggestedMessage : ""}
 `;
           await this.app.vault.modify(this.person.file, noteContent + entry);
@@ -1880,53 +1880,53 @@ var ArcadiaConnectPlugin = class extends import_obsidian11.Plugin {
     this.registerMarkdownPostProcessor(
       this.mentionPostProcessor.getProcessor()
     );
-    this.addRibbonIcon("users", "People Panel", () => {
+    this.addRibbonIcon("users", "People panel", () => {
       void this.activatePeopleView();
     });
-    this.addRibbonIcon("history", "Interaction Timeline", () => {
+    this.addRibbonIcon("history", "Interaction timeline", () => {
       void this.activateView(VIEW_TYPE_TIMELINE);
     });
-    this.addRibbonIcon("kanban-square", "Deal Pipeline", () => {
+    this.addRibbonIcon("kanban-square", "Deal pipeline", () => {
       void this.activateView(VIEW_TYPE_PIPELINE);
     });
     this.addCommand({
       id: "open-people-panel",
-      name: "Open People Panel",
+      name: "Open people panel",
       callback: () => {
         void this.activatePeopleView();
       }
     });
     this.addCommand({
       id: "create-person-note",
-      name: "Create Person Note",
+      name: "Create person note",
       callback: async () => {
         await this.createPersonNoteCommand();
       }
     });
     this.addCommand({
       id: "mention-person",
-      name: "Mention Person",
+      name: "Mention person",
       editorCallback: (editor) => {
         editor.replaceSelection(this.settings.triggerChar || "@");
       }
     });
     this.addCommand({
       id: "open-timeline",
-      name: "Open Interaction Timeline",
+      name: "Open interaction timeline",
       callback: () => {
         void this.activateView(VIEW_TYPE_TIMELINE);
       }
     });
     this.addCommand({
       id: "open-pipeline",
-      name: "Open Deal Pipeline",
+      name: "Open deal pipeline",
       callback: () => {
         void this.activateView(VIEW_TYPE_PIPELINE);
       }
     });
     this.addCommand({
       id: "log-interaction",
-      name: "Log Interaction",
+      name: "Log interaction",
       callback: () => {
         new InteractionLoggerModal(this.app, this.personManager, null, () => {
           this.refreshPeopleView();
@@ -1935,7 +1935,7 @@ var ArcadiaConnectPlugin = class extends import_obsidian11.Plugin {
     });
     this.addCommand({
       id: "ai-suggest-followup",
-      name: "AI: Suggest Follow-up for Active Contact",
+      name: "AI: Suggest follow-up for active contact",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file)
@@ -2056,7 +2056,7 @@ var ArcadiaConnectPlugin = class extends import_obsidian11.Plugin {
       const input = document.createElement("input");
       input.type = "text";
       input.className = "arcadia-connect-modal-input";
-      input.placeholder = "Full Name";
+      input.placeholder = "Full name";
       content.appendChild(input);
       const buttons = document.createElement("div");
       buttons.className = "arcadia-connect-modal-buttons";

@@ -24,7 +24,7 @@ export class InteractionLoggerModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass('arcadia-interaction-modal');
 
-		contentEl.createEl('h2', { text: 'Log Interaction' });
+		contentEl.createEl('h2', { text: 'Log interaction' });
 
 		const today = new Date().toISOString().split('T')[0];
 
@@ -42,7 +42,7 @@ export class InteractionLoggerModal extends Modal {
 				.setName('Person')
 				.setDesc('Who did you interact with?')
 				.addDropdown(dd => {
-					dd.addOption('', '— Select person —');
+					dd.addOption('', '— Select a person —');
 					for (const p of people.sort((a, b) => a.name.localeCompare(b.name))) {
 						dd.addOption(p.name, p.name);
 					}
@@ -111,7 +111,7 @@ export class InteractionLoggerModal extends Modal {
 		cancelBtn.addEventListener('click', () => this.close());
 
 		const saveBtn = buttonRow.createEl('button', {
-			text: 'Log Interaction',
+			text: 'Log interaction',
 			cls: 'mod-cta',
 		});
 
@@ -210,7 +210,7 @@ export class SetFollowUpModal extends Modal {
 		const cancelBtn = buttonRow.createEl('button', { text: 'Cancel' });
 		cancelBtn.addEventListener('click', () => this.close());
 
-		const saveBtn = buttonRow.createEl('button', { text: 'Set Follow-up', cls: 'mod-cta' });
+		const saveBtn = buttonRow.createEl('button', { text: 'Set follow-up', cls: 'mod-cta' });
 		saveBtn.addEventListener('click', () => {
 			void (async () => {
 				if (!followUpDate) {

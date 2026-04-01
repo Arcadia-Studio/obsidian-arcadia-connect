@@ -118,7 +118,7 @@ export class MentionPostProcessor {
 				e.preventDefault();
 				const person = this.personManager.getPersonByName(m.name);
 				if (person) {
-					this.app.workspace.openLinkText(person.file.path, '', false);
+					void this.app.workspace.openLinkText(person.file.path, '', false);
 				}
 			});
 

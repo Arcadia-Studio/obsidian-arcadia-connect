@@ -25,7 +25,7 @@ export class TimelineView extends ItemView {
 	}
 
 	getViewType(): string { return VIEW_TYPE_TIMELINE; }
-	getDisplayText(): string { return 'Interaction Timeline'; }
+	getDisplayText(): string { return 'Interaction timeline'; }
 	getIcon(): string { return 'history'; }
 
 	async onOpen(): Promise<void> {
@@ -34,7 +34,7 @@ export class TimelineView extends ItemView {
 		container.addClass('arcadia-timeline-view');
 
 		const header = container.createDiv({ cls: 'arcadia-timeline-header' });
-		header.createEl('h4', { text: 'Interaction Timeline' });
+		header.createEl('h4', { text: 'Interaction timeline' });
 
 		const controls = header.createDiv({ cls: 'arcadia-timeline-controls' });
 
@@ -113,7 +113,7 @@ export class TimelineView extends ItemView {
 			const empty = this.listEl.createDiv({ cls: 'arcadia-timeline-empty' });
 			empty.textContent = this.filterContact
 				? 'No interactions found for that contact.'
-				: 'No interactions logged yet. Use "Log Interaction" to get started.';
+				: 'No interactions logged yet. Use "Log interaction" to get started.';
 			return;
 		}
 
@@ -126,8 +126,8 @@ export class TimelineView extends ItemView {
 		const getBucket = (date: string): string => {
 			if (date === today) return 'Today';
 			if (date === yesterday) return 'Yesterday';
-			if (date >= weekAgo) return 'This Week';
-			if (date >= monthAgo) return 'This Month';
+			if (date >= weekAgo) return 'This week';
+			if (date >= monthAgo) return 'This month';
 			return 'Earlier';
 		};
 
@@ -160,7 +160,7 @@ export class TimelineView extends ItemView {
 			});
 			contactLink.addEventListener('click', (e) => {
 				e.preventDefault();
-				this.app.workspace.openLinkText(entry.contactFile.path, '', false);
+				void this.app.workspace.openLinkText(entry.contactFile.path, '', false);
 			});
 
 			body.createDiv({
@@ -170,7 +170,7 @@ export class TimelineView extends ItemView {
 		}
 	}
 
-	async onClose(): Promise<void> {
+	onClose(): void {
 		// nothing
 	}
 }

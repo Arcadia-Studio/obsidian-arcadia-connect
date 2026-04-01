@@ -40,7 +40,7 @@ export class PeopleView extends ItemView {
 		return 'users';
 	}
 
-	async onOpen(): Promise<void> {
+	onOpen(): void {
 		const container = this.containerEl.children[1] as HTMLElement;
 		container.empty();
 		container.addClass('arcadia-connect-people-view');
@@ -233,7 +233,7 @@ export class PeopleView extends ItemView {
 			});
 
 			item.addEventListener('click', () => {
-				this.app.workspace.openLinkText(person.file.path, '', false);
+				void this.app.workspace.openLinkText(person.file.path, '', false);
 			});
 
 			item.addEventListener('mouseenter', () => {
@@ -323,7 +323,7 @@ export class PeopleView extends ItemView {
 			const input = document.createElement('input');
 			input.type = 'text';
 			input.className = 'arcadia-connect-modal-input';
-			input.placeholder = 'Full Name';
+			input.placeholder = 'Full name';
 			content.appendChild(input);
 
 			const buttons = document.createElement('div');
@@ -373,7 +373,7 @@ export class PeopleView extends ItemView {
 		});
 	}
 
-	async onClose(): Promise<void> {
+	onClose(): void {
 		this.profileCard.hide();
 	}
 }
