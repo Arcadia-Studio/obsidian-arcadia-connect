@@ -170,7 +170,7 @@ export class TimelineView extends ItemView {
 		}
 	}
 
-	onClose(): void {
-		// nothing
+	async onClose(): Promise<void> {
+		await Promise.resolve();
 	}
 }

@@ -16,7 +16,8 @@ export class PipelineView extends ItemView {
 	getDisplayText(): string { return 'Pipeline'; }
 	getIcon(): string { return 'kanban-square'; }
 
-	onOpen(): void {
+	async onOpen(): Promise<void> {
+		await Promise.resolve();
 		const container = this.containerEl.children[1] as HTMLElement;
 		container.empty();
 		container.addClass('arcadia-pipeline-view');
@@ -170,7 +171,7 @@ export class PipelineView extends ItemView {
 		}
 	}
 
-	onClose(): void {
-		// nothing
+	async onClose(): Promise<void> {
+		await Promise.resolve();
 	}
 }

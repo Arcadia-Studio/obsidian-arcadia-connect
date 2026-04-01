@@ -40,7 +40,8 @@ export class PeopleView extends ItemView {
 		return 'users';
 	}
 
-	onOpen(): void {
+	async onOpen(): Promise<void> {
+		await Promise.resolve();
 		const container = this.containerEl.children[1] as HTMLElement;
 		container.empty();
 		container.addClass('arcadia-connect-people-view');
@@ -373,7 +374,8 @@ export class PeopleView extends ItemView {
 		});
 	}
 
-	onClose(): void {
+	async onClose(): Promise<void> {
+		await Promise.resolve();
 		this.profileCard.hide();
 	}
 }
