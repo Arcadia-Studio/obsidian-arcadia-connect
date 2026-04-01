@@ -23,7 +23,7 @@ export class PremiumModal extends Modal {
 
 	onOpen() {
 		const { contentEl } = this;
-		contentEl.createEl('h2', { text: 'Arcadia Connect premium' });
+		contentEl.createEl('h2', { text: 'Premium features' });
 		contentEl.createEl('p', {
 			text: `"${this.featureName}" is part of Arcadia Connect Premium.`,
 		});
@@ -34,11 +34,11 @@ export class PremiumModal extends Modal {
 
 		new Setting(contentEl)
 			.setName('License key')
-			.setDesc('Enter your license key from Lemon Squeezy')
+			.setDesc('Enter your license key')
 			.addText(text => {
 				this.textInputEl = text.inputEl;
 				text
-					.setPlaceholder('XXXX-XXXX-XXXX-XXXX')
+					.setPlaceholder('xxxx-xxxx-xxxx-xxxx')
 					.onChange((value) => {
 						if (value.trim().length > 10) {
 							void (async () => {

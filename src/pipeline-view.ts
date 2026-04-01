@@ -152,7 +152,7 @@ export class PipelineView extends ItemView {
 				// Log interaction button
 				const logBtn = actions.createEl('button', {
 					cls: 'arcadia-card-log-btn',
-					text: '+ Log',
+					text: '+ log',
 					attr: { title: 'Log interaction' },
 				});
 				logBtn.addEventListener('click', (e) => {

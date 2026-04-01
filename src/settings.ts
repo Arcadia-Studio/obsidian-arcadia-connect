@@ -15,8 +15,6 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		new Setting(containerEl).setName('General').setHeading();
-
 		new Setting(containerEl)
 			.setName('People folder')
 			.setDesc('Folder where person notes are stored (relative to vault root).')
@@ -74,10 +72,10 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('License key')
-			.setDesc('Enter your Arcadia Connect Premium license key from Lemon Squeezy.')
+			.setDesc('Enter your license key to activate premium features.')
 			.addText(text => {
 				text
-					.setPlaceholder('XXXX-XXXX-XXXX-XXXX')
+					.setPlaceholder('xxxx-xxxx-xxxx-xxxx')
 					.setValue(this.plugin.settings.licenseKey)
 					.onChange(async (value) => {
 						this.plugin.settings.licenseKey = value.trim();
@@ -100,7 +98,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 						licenseStatusEl.textContent = `License status: Active${status.customerEmail ? ` (${status.customerEmail})` : ''}`;
 						licenseStatusEl.className = 'mod-success';
 					} else {
-						licenseStatusEl.textContent = 'License status: Invalid or expired. Check your key and try again.';
+						licenseStatusEl.textContent = 'License status: invalid or expired. Check your key and try again.';
 						licenseStatusEl.className = 'mod-warning';
 					}
 				})
@@ -115,16 +113,16 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 			);
 
 		// ----- AI Enrichment -----
-		new Setting(containerEl).setName('AI enrichment (BYOK)').setHeading();
+		new Setting(containerEl).setName('AI enrichment').setHeading();
 		containerEl.createEl('p', {
-			text: 'Bring your own API key to unlock AI-powered follow-up suggestions. Keys are stored locally in your vault settings and never sent to Arcadia servers.',
+			text: 'Bring your own API key to unlock AI-powered follow-up suggestions. Keys are stored locally in your vault settings and never sent to our servers.',
 			cls: 'setting-item-description',
 		});
 
 		new Setting(containerEl)
 			.setName('AI provider')
 			.addDropdown(dd => dd
-				.addOption('anthropic', 'Anthropic (Claude)')
+				.addOption('anthropic', 'Anthropic')
 				.addOption('openai', 'OpenAI')
 				.setValue(this.plugin.settings.aiProvider)
 				.onChange(async (value) => {
@@ -136,7 +134,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 
 		if (this.plugin.settings.aiProvider === 'anthropic') {
 			new Setting(containerEl)
-				.setName('Anthropic API key')
+				.setName('API key')
 				.setDesc('Your key from console.anthropic.com')
 				.addText(text => text
 					.setPlaceholder('sk-ant-...')
@@ -148,7 +146,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 				);
 		} else {
 			new Setting(containerEl)
-				.setName('OpenAI API key')
+				.setName('API key')
 				.setDesc('Your key from platform.openai.com')
 				.addText(text => text
 					.setPlaceholder('sk-...')
@@ -160,11 +158,11 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 				);
 
 			new Setting(containerEl)
-				.setName('OpenAI model')
+				.setName('Model')
 				.addDropdown(dd => dd
-					.addOption('gpt-4o-mini', 'GPT-4o mini (fast, cheap)')
-					.addOption('gpt-4o', 'GPT-4o (best quality)')
-					.addOption('gpt-4-turbo', 'GPT-4 Turbo')
+					.addOption('gpt-4o-mini', 'gpt-4o-mini (fast, cheap)')
+					.addOption('gpt-4o', 'gpt-4o (best quality)')
+					.addOption('gpt-4-turbo', 'gpt-4-turbo')
 					.setValue(this.plugin.settings.openaiModel)
 					.onChange(async (value) => {
 						this.plugin.settings.openaiModel = value;

@@ -98,7 +98,7 @@ export class PeopleView extends ItemView {
 		// New Person button
 		const newBtn = controls.createEl('button', {
 			cls: 'arcadia-connect-new-btn',
-			text: '+ Person',
+			text: '+ person',
 		});
 		newBtn.addEventListener('click', () => {
 			void this.createNewPerson();
@@ -107,7 +107,7 @@ export class PeopleView extends ItemView {
 		// Log interaction button
 		const logBtn = controls.createEl('button', {
 			cls: 'arcadia-connect-log-btn',
-			text: '+ Log',
+			text: '+ log',
 			attr: { title: 'Log an interaction' },
 		});
 		logBtn.addEventListener('click', () => {
@@ -211,7 +211,7 @@ export class PeopleView extends ItemView {
 
 			const logBtn = actions.createEl('button', {
 				cls: 'arcadia-connect-action-btn',
-				text: '+ Log',
+				text: '+ log',
 				attr: { title: 'Log interaction' },
 			});
 			logBtn.addEventListener('click', (e) => {

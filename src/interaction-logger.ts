@@ -42,7 +42,7 @@ export class InteractionLoggerModal extends Modal {
 				.setName('Person')
 				.setDesc('Who did you interact with?')
 				.addDropdown(dd => {
-					dd.addOption('', '— Select a person —');
+					dd.addOption('', '— select a person —');
 					for (const p of people.sort((a, b) => a.name.localeCompare(b.name))) {
 						dd.addOption(p.name, p.name);
 					}

@@ -123,7 +123,7 @@ export default class ArcadiaConnectPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'ai-suggest-followup',
-			name: 'AI: Suggest follow-up for active contact',
+			name: 'AI: suggest follow-up for active contact',
 			checkCallback: (checking) => {
 				const file = this.app.workspace.getActiveFile();
 				if (!file) return false;
@@ -222,13 +222,13 @@ export default class ArcadiaConnectPlugin extends Plugin {
 	async activateView(viewType: string): Promise<void> {
 		const existing = this.app.workspace.getLeavesOfType(viewType);
 		if (existing.length > 0) {
-			this.app.workspace.revealLeaf(existing[0]);
+			void this.app.workspace.revealLeaf(existing[0]);
 			return;
 		}
 		const leaf = this.app.workspace.getRightLeaf(false);
 		if (leaf) {
 			await leaf.setViewState({ type: viewType, active: true });
-			this.app.workspace.revealLeaf(leaf);
+			void this.app.workspace.revealLeaf(leaf);
 		}
 	}
 
