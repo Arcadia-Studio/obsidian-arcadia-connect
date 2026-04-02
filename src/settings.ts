@@ -122,8 +122,8 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('AI provider')
 			.addDropdown(dd => dd
-				.addOption('anthropic', 'Anthropic')
-				.addOption('openai', 'OpenAI')
+				.addOption('anthropic', 'anthropic')
+				.addOption('openai', 'openai')
 				.setValue(this.plugin.settings.aiProvider)
 				.onChange(async (value) => {
 					this.plugin.settings.aiProvider = value as ArcadiaConnectSettings['aiProvider'];
@@ -135,7 +135,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 		if (this.plugin.settings.aiProvider === 'anthropic') {
 			new Setting(containerEl)
 				.setName('API key')
-				.setDesc('Your Anthropic API key')
+				.setDesc('Enter your API key for this provider')
 				.addText(text => text
 					.setPlaceholder('Sk-ant-...')
 					.setValue(this.plugin.settings.anthropicApiKey)
@@ -147,7 +147,7 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 		} else {
 			new Setting(containerEl)
 				.setName('API key')
-				.setDesc('Your OpenAI API key')
+				.setDesc('Enter your API key for this provider')
 				.addText(text => text
 					.setPlaceholder('Sk-...')
 					.setValue(this.plugin.settings.openaiApiKey)
