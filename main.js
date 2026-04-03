@@ -161,13 +161,13 @@ var ArcadiaConnectSettingTab = class extends import_obsidian2.PluginSettingTab {
     new import_obsidian2.Setting(containerEl).setName("License").setHeading();
     const licenseStatus = this.plugin.settings.licenseStatus;
     const isPro = this.plugin.settings.isPro && (licenseStatus == null ? void 0 : licenseStatus.valid);
-    const statusDesc = isPro ? `Active${(licenseStatus == null ? void 0 : licenseStatus.customerEmail) ? ` (${licenseStatus.customerEmail})` : ""}${(licenseStatus == null ? void 0 : licenseStatus.expiresAt) ? ` - expires ${licenseStatus.expiresAt}` : ""}` : "No active license. Enter your license key and click Validate.";
+    const statusDesc = isPro ? `active${(licenseStatus == null ? void 0 : licenseStatus.customerEmail) ? ` (${licenseStatus.customerEmail})` : ""}${(licenseStatus == null ? void 0 : licenseStatus.expiresAt) ? ` - expires ${licenseStatus.expiresAt}` : ""}` : "No active license. Enter your license key and click validate.";
     const licenseStatusEl = containerEl.createEl("p", {
       text: `License status: ${statusDesc}`,
       cls: isPro ? "mod-success" : "mod-warning"
     });
     new import_obsidian2.Setting(containerEl).setName("License key").setDesc("Enter your license key to activate premium features.").addText((text) => {
-      text.setPlaceholder("xxxx-xxxx-xxxx-xxxx").setValue(this.plugin.settings.licenseKey).onChange(async (value) => {
+      text.setPlaceholder("Xxxx-xxxx-xxxx-xxxx").setValue(this.plugin.settings.licenseKey).onChange(async (value) => {
         this.plugin.settings.licenseKey = value.trim();
         await this.plugin.saveSettings();
       });
@@ -183,7 +183,7 @@ var ArcadiaConnectSettingTab = class extends import_obsidian2.PluginSettingTab {
         await this.plugin.saveSettings();
         btn.setButtonText("Validate").setDisabled(false);
         if (status.valid) {
-          licenseStatusEl.textContent = `License status: Active${status.customerEmail ? ` (${status.customerEmail})` : ""}`;
+          licenseStatusEl.textContent = `License status: active${status.customerEmail ? ` (${status.customerEmail})` : ""}`;
           licenseStatusEl.className = "mod-success";
         } else {
           licenseStatusEl.textContent = "License status: invalid or expired. Check your key and try again.";
@@ -209,21 +209,21 @@ var ArcadiaConnectSettingTab = class extends import_obsidian2.PluginSettingTab {
       })
     );
     if (this.plugin.settings.aiProvider === "anthropic") {
-      new import_obsidian2.Setting(containerEl).setName("API key").setDesc("Your key from console.anthropic.com").addText(
-        (text) => text.setPlaceholder("sk-ant-...").setValue(this.plugin.settings.anthropicApiKey).onChange(async (value) => {
+      new import_obsidian2.Setting(containerEl).setName("API key").setDesc("Enter your API key for this provider").addText(
+        (text) => text.setPlaceholder("Sk-ant-...").setValue(this.plugin.settings.anthropicApiKey).onChange(async (value) => {
           this.plugin.settings.anthropicApiKey = value.trim();
           await this.plugin.saveSettings();
         })
       );
     } else {
-      new import_obsidian2.Setting(containerEl).setName("API key").setDesc("Your key from platform.openai.com").addText(
-        (text) => text.setPlaceholder("sk-...").setValue(this.plugin.settings.openaiApiKey).onChange(async (value) => {
+      new import_obsidian2.Setting(containerEl).setName("API key").setDesc("Enter your API key for this provider").addText(
+        (text) => text.setPlaceholder("Sk-...").setValue(this.plugin.settings.openaiApiKey).onChange(async (value) => {
           this.plugin.settings.openaiApiKey = value.trim();
           await this.plugin.saveSettings();
         })
       );
       new import_obsidian2.Setting(containerEl).setName("Model").addDropdown(
-        (dd) => dd.addOption("gpt-4o-mini", "gpt-4o-mini (fast, cheap)").addOption("gpt-4o", "gpt-4o (best quality)").addOption("gpt-4-turbo", "gpt-4-turbo").setValue(this.plugin.settings.openaiModel).onChange(async (value) => {
+        (dd) => dd.addOption("gpt-4o-mini", "Gpt-4o-mini (fast, cheap)").addOption("gpt-4o", "Gpt-4o (best quality)").addOption("gpt-4-turbo", "Gpt-4-turbo").setValue(this.plugin.settings.openaiModel).onChange(async (value) => {
           this.plugin.settings.openaiModel = value;
           await this.plugin.saveSettings();
         })

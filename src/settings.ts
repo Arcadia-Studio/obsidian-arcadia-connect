@@ -122,8 +122,8 @@ export class ArcadiaConnectSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('AI provider')
 			.addDropdown(dd => dd
-				.addOption('anthropic', 'anthropic')
-				.addOption('openai', 'openai')
+				.addOption('anthropic', 'Anthropic')
+				.addOption('openai', 'OpenAI')
 				.setValue(this.plugin.settings.aiProvider)
 				.onChange(async (value) => {
 					this.plugin.settings.aiProvider = value as ArcadiaConnectSettings['aiProvider'];
