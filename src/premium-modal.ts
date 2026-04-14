@@ -38,7 +38,7 @@ export class PremiumModal extends Modal {
 			.addText(text => {
 				this.textInputEl = text.inputEl;
 				text
-					.setPlaceholder('Xxxx-xxxx-xxxx-xxxx')
+					.setPlaceholder('xxxx-xxxx-xxxx-xxxx')
 					.onChange((value) => {
 						if (value.trim().length > 10) {
 							void (async () => {

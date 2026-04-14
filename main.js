@@ -167,7 +167,7 @@ var ArcadiaConnectSettingTab = class extends import_obsidian2.PluginSettingTab {
       cls: isPro ? "mod-success" : "mod-warning"
     });
     new import_obsidian2.Setting(containerEl).setName("License key").setDesc("Enter your license key to activate premium features.").addText((text) => {
-      text.setPlaceholder("Xxxx-xxxx-xxxx-xxxx").setValue(this.plugin.settings.licenseKey).onChange(async (value) => {
+      text.setPlaceholder("xxxx-xxxx-xxxx-xxxx").setValue(this.plugin.settings.licenseKey).onChange(async (value) => {
         this.plugin.settings.licenseKey = value.trim();
         await this.plugin.saveSettings();
       });
@@ -210,20 +210,20 @@ var ArcadiaConnectSettingTab = class extends import_obsidian2.PluginSettingTab {
     );
     if (this.plugin.settings.aiProvider === "anthropic") {
       new import_obsidian2.Setting(containerEl).setName("API key").setDesc("Enter your API key for this provider").addText(
-        (text) => text.setPlaceholder("Sk-ant-...").setValue(this.plugin.settings.anthropicApiKey).onChange(async (value) => {
+        (text) => text.setPlaceholder("sk-ant-...").setValue(this.plugin.settings.anthropicApiKey).onChange(async (value) => {
           this.plugin.settings.anthropicApiKey = value.trim();
           await this.plugin.saveSettings();
         })
       );
     } else {
       new import_obsidian2.Setting(containerEl).setName("API key").setDesc("Enter your API key for this provider").addText(
-        (text) => text.setPlaceholder("Sk-...").setValue(this.plugin.settings.openaiApiKey).onChange(async (value) => {
+        (text) => text.setPlaceholder("sk-...").setValue(this.plugin.settings.openaiApiKey).onChange(async (value) => {
           this.plugin.settings.openaiApiKey = value.trim();
           await this.plugin.saveSettings();
         })
       );
       new import_obsidian2.Setting(containerEl).setName("Model").addDropdown(
-        (dd) => dd.addOption("gpt-4o-mini", "Gpt-4o-mini (fast, cheap)").addOption("gpt-4o", "Gpt-4o (best quality)").addOption("gpt-4-turbo", "Gpt-4-turbo").setValue(this.plugin.settings.openaiModel).onChange(async (value) => {
+        (dd) => dd.addOption("gpt-4o-mini", "GPT-4o-mini (fast, cheap)").addOption("gpt-4o", "GPT-4o (best quality)").addOption("gpt-4-turbo", "GPT-4-turbo").setValue(this.plugin.settings.openaiModel).onChange(async (value) => {
           this.plugin.settings.openaiModel = value;
           await this.plugin.saveSettings();
         })
