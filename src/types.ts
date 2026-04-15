@@ -41,14 +41,7 @@ export type DealStage =
 	| 'closed-lost'
 	| 'nurture';
 
-export type RelationshipType =
-	| 'client'
-	| 'prospect'
-	| 'partner'
-	| 'vendor'
-	| 'personal'
-	| 'colleague'
-	| (string & Record<never, never>);
+export type RelationshipType = string;
 
 export type InteractionType = 'call' | 'email' | 'meeting' | 'note' | 'other';
 
